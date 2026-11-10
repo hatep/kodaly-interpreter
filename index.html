@@ -1,323 +1,1698 @@
-<!-- Top Left: 3 Flags Selector + Range Pill + Tonic / Transposition Pill -->
-<div class="flex items-center gap-2 pointer-events-auto flex-wrap">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Kodály Interpreter</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   
-  <!-- Flag Selector Container -->
-  <div class="flex items-center gap-2 bg-black/40 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/10 shadow-lg">
-    <!-- 1. French Flag (Default Active: Fixed-Do Si) -->
-    <button id="flag-fr" class="flag-btn opacity-100 ring-2 ring-sky-400/90 rounded overflow-hidden p-0.5" title="Français (Do, Ré, Mi, Fa, Sol, La, Si)">
-      <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 3 2">
-        <rect width="1" height="2" x="0" fill="#002395"/>
-        <rect width="1" height="2" x="1" fill="#fff"/>
-        <rect width="1" height="2" x="2" fill="#ED2939"/>
-      </svg>
-    </button>
+  <!-- MediaPipe dependencies via jsDelivr -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 
-    <!-- 2. Hungarian Flag (Kodály Solfège: So & Ti) -->
-    <button id="flag-hu" class="flag-btn opacity-30 hover:opacity-85 rounded overflow-hidden p-0.5" title="Magyar / Kodály (Do, Re, Mi, Fa, So, La, Ti)">
-      <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 6 3">
-        <rect width="6" height="1" y="0" fill="#CE2939"/>
-        <rect width="6" height="1" y="1" fill="#FFFFFF"/>
-        <rect width="6" height="1" y="2" fill="#477050"/>
-      </svg>
-    </button>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #06090e;
+      color: #f1f5f9;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .font-brand {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 0.18em;
+    }
+    .font-mono-note {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mirrored {
+      transform: scaleX(-1);
+    }
+    .glass-card {
+      background: rgba(10, 15, 26, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.7);
+    }
+    .title-shadow {
+      text-shadow: 
+        0 2px 4px rgba(0,0,0,0.95), 
+        0 4px 14px rgba(0,0,0,0.9), 
+        0 0 24px rgba(0,0,0,0.95),
+        0 0 40px rgba(0,0,0,0.85);
+    }
+    .note-text-left {
+      color: rgba(56, 189, 248, 0.88);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.45);
+    }
+    .note-text-right {
+      color: rgba(244, 63, 94, 0.88);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(244, 63, 94, 0.45);
+    }
+    .suspension-dots {
+      letter-spacing: 0.35em;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+    }
+    .flag-btn {
+      transition: all 0.2s ease-in-out;
+    }
+    .meter-bar {
+      transition: width 0.08s ease-out;
+    }
+    .loading-fade {
+      transition: opacity 0.35s ease-in-out, transform 0.35s ease-in-out;
+    }
+    .threshold-handle {
+      cursor: ew-resize;
+      touch-action: none;
+    }
+    /* 12-Segment Dial Sector */
+    .dial-sector {
+      cursor: pointer;
+      transition: fill 0.18s ease, filter 0.18s ease;
+    }
+    .dial-sector:hover {
+      fill: rgba(56, 189, 248, 0.35);
+    }
+    .dial-sector.active-root {
+      fill: rgba(56, 189, 248, 0.75);
+      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.85));
+    }
+  </style>
+</head>
+<body class="w-screen h-screen flex flex-col items-center justify-between relative select-none">
 
-    <!-- 3. UK Flag (Alphabetical: C, D, E, F, G, A, B) -->
-    <button id="flag-en" class="flag-btn opacity-30 hover:opacity-85 rounded overflow-hidden p-0.5" title="Alphabetical Letters (C, D, E, F, G, A, B)">
-      <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 60 30">
-        <clipPath id="s"><path d="M0,0 v30 h60 v-30 z"/></clipPath>
-        <clipPath id="t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath>
-        <g clip-path="url(#s)">
-          <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
-          <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
-          <path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#t)" stroke="#C8102E" stroke-width="4"/>
-          <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
-          <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
-        </g>
-      </svg>
-    </button>
-  </div>
+  <!-- Hidden Camera Video Input -->
+  <video id="webcam" class="hidden" playsinline muted></video>
 
-  <!-- Pitch Range Pill (↕ Sol₂ – Sol₄) -->
-  <div class="relative">
-    <button id="btn-range-pill" class="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 shadow-lg text-xs font-mono-note text-slate-200 transition-all cursor-pointer">
-      <span class="text-sky-400 font-bold">↕</span>
-      <span id="lbl-range-pill">Sol₂ – Sol₄</span>
-    </button>
+  <!-- Fullscreen Canvas (Mirrored for natural mirror view) -->
+  <canvas id="output_canvas" class="absolute inset-0 w-full h-full object-cover mirrored z-0"></canvas>
 
-    <!-- Range Dual-Slider Popover -->
-    <div id="popover-range" class="glass-card absolute top-full left-0 mt-2 p-3.5 rounded-xl border border-white/15 shadow-2xl flex flex-col gap-2.5 w-72 sm:w-80 hidden z-50">
-      <div class="flex justify-between items-center text-[11px] font-mono-note text-slate-400 border-b border-white/10 pb-1.5">
-        <span>Range: <strong id="lbl-range-current" class="text-sky-300">Sol₂ – Sol₄</strong></span>
-        <span class="text-[10px] text-slate-500">(Drag min & max)</span>
-      </div>
-
-      <!-- Dual Slider Track Container -->
-      <div class="relative w-full h-8 flex items-center select-none pt-2">
-        <div id="range-track-bg" class="w-full h-2 bg-slate-800 rounded-full relative overflow-hidden border border-white/10">
-          <div id="range-highlight-bar" class="absolute top-0 bottom-0 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full"></div>
-        </div>
-        <!-- Min Slider Thumb -->
-        <div id="handle-range-min" class="absolute w-5 h-5 -ml-2.5 bg-sky-400 rounded-full border-2 border-white shadow-[0_0_10px_rgba(56,189,248,0.8)] cursor-ew-resize flex items-center justify-center top-3.5 z-30">
-          <div class="w-1.5 h-1.5 bg-black/60 rounded-full"></div>
-        </div>
-        <!-- Max Slider Thumb -->
-        <div id="handle-range-max" class="absolute w-5 h-5 -ml-2.5 bg-indigo-400 rounded-full border-2 border-white shadow-[0_0_10px_rgba(129,140,248,0.8)] cursor-ew-resize flex items-center justify-center top-3.5 z-30">
-          <div class="w-1.5 h-1.5 bg-black/60 rounded-full"></div>
-        </div>
-      </div>
-
-      <div class="flex justify-between text-[10px] font-mono-note text-slate-400 pt-1">
-        <span id="lbl-range-min-disp">Min: Sol₂</span>
-        <span id="lbl-range-max-disp">Max: Sol₄</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Root Note / Tonic Transposition: Textless Tuning Fork Pill -->
-  <div class="relative">
-    <button id="btn-root-pill" class="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/10 shadow-lg text-xs font-mono-note text-slate-200 transition-all cursor-pointer" title="Transposition / Root Note">
-      <!-- Tuning Fork SVG -->
-      <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M7 3v7a5 5 0 0 0 10 0V3" />
-        <path d="M12 15v6" />
-      </svg>
-      <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]"></span>
-    </button>
-
-    <!-- Circular 12-Segment Ring Popover (Reduced to 2/3 scale: w-40 h-40) -->
-    <div id="popover-root" class="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden z-50 select-none">
-      <div class="relative w-40 h-40 sm:w-44 sm:h-44 rounded-full p-1 bg-black/75 backdrop-blur-xl border border-cyan-500/30 shadow-[0_0_30px_rgba(0,0,0,0.85),0_0_18px_rgba(56,189,248,0.25)] flex items-center justify-center">
-        <svg id="root-dial-svg" class="w-full h-full" viewBox="-115 -115 230 230"></svg>
-        <!-- Center Hub -->
-        <div class="absolute w-10 h-10 rounded-full bg-slate-950/95 border border-cyan-400/40 flex flex-col items-center justify-center pointer-events-none shadow-[0_0_10px_rgba(56,189,248,0.3)]">
-          <span id="lbl-root-hub" class="font-mono-note text-[11px] sm:text-xs font-bold text-cyan-300">C</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Center: High Contrast Title -->
-<h1 class="font-brand text-sm sm:text-lg md:text-xl font-bold uppercase tracking-widest text-slate-100 title-shadow text-center pr-2">
-  Kodály Interpreter
-</h1>
-
-<div class="w-20 hidden sm:block"></div>
-
-
-<!-- Left Hand HUD (Screen Left) -->
-<div id="hud-left" class="flex flex-col items-center justify-center min-w-[7rem] sm:min-w-[9rem]">
-  <div id="note-left" class="font-mono-note text-4xl sm:text-6xl md:text-7xl font-extrabold note-text-left hidden">
-    —
-  </div>
-  <div id="dots-left" class="text-2xl sm:text-3xl font-mono-note text-sky-400/35 suspension-dots">
-    ...
-  </div>
-</div>
-
-<!-- Right Hand HUD (Screen Right) -->
-<div id="hud-right" class="flex flex-col items-center justify-center min-w-[7rem] sm:min-w-[9rem]">
-  <div id="note-right" class="font-mono-note text-4xl sm:text-6xl md:text-7xl font-extrabold note-text-right hidden">
-    —
-  </div>
-  <div id="dots-right" class="text-2xl sm:text-3xl font-mono-note text-rose-400/35 suspension-dots">
-    ...
-  </div>
-</div>
-
-
-<!-- Top Debug Bar: Left Action Buttons (Pushed right to clear left scale) & Right 'Debug' Pill (Pushed left to clear right scale) -->
-<div class="w-full flex items-center justify-between relative pointer-events-auto">
-  
-  <!-- Left side: Debug Feature Buttons with clearance from left pitch scale (~60px) -->
-  <div class="ml-14 sm:ml-16 flex items-center gap-1.5 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/10 shadow-lg text-[11px] font-mono-note">
-    <button id="dbg-toggle-scales" class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition-all font-semibold" title="Toggle side pitch ladders">
-      Scales: ON
-    </button>
-    <button id="dbg-toggle-metric" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Toggle Sol/Mi classifier telemetry panel">
-      Sol/Mi Metric: OFF
-    </button>
-    <button id="dbg-toggle-mesh-slider" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Show normal mode mesh opacity slider">
-      Mesh Opacity
-    </button>
-    <button id="dbg-toggle-volumes" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Show Volumes & Stereo Panning panel">
-      Volumes
-    </button>
-  </div>
-
-  <!-- Right Side: 'Debug' Status Label (Pushed inward from right edge to clear right pitch scale) -->
-  <div class="mr-14 sm:mr-16 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono-note text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.25)] pointer-events-none">
-    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-    Debug
-  </div>
-</div>
-
-<!-- Mesh Opacity Slider Sub-Panel (Toggled via 'Mesh Opacity' button) -->
-<div id="debug-mesh-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2 rounded-xl border border-white/10 flex items-center gap-3 text-xs font-mono-note pointer-events-auto max-w-sm w-full hidden">
-  <span class="text-slate-300 whitespace-nowrap">Mesh Opacity:</span>
-  <input id="input-mesh-opacity" type="range" min="0" max="1" step="0.02" value="0.30" class="w-full accent-sky-400 cursor-pointer">
-  <span id="lbl-mesh-opacity" class="text-sky-300 font-bold w-10 text-right">30%</span>
-</div>
-
-<!-- Volumes & Stereo Panning Sub-Panel (Toggled via 'Volumes' button) -->
-<div id="debug-volumes-panel" class="ml-14 sm:ml-16 glass-card px-4 py-3 rounded-xl border border-white/10 flex flex-col gap-2.5 text-xs font-mono-note pointer-events-auto max-w-md w-full hidden">
-  <div class="flex items-center justify-between border-b border-white/10 pb-1 text-slate-300 text-[11px]">
-    <span class="font-bold text-cyan-300">Audio Volumes & Stereo Mixing</span>
-    <span class="text-slate-500 text-[10px]">Real-time audio controls</span>
-  </div>
-
-  <!-- Left Voice Volume (Default 50%) -->
-  <div class="flex items-center gap-3">
-    <span class="text-sky-400 w-24 shrink-0 font-medium">Vol Left (L):</span>
-    <input id="input-vol-left" type="range" min="0" max="1" step="0.01" value="0.50" class="w-full accent-sky-400 cursor-pointer">
-    <span id="lbl-vol-left" class="text-sky-300 font-bold w-10 text-right">50%</span>
-  </div>
-
-  <!-- Right Voice Volume (Default 75%) -->
-  <div class="flex items-center gap-3">
-    <span class="text-rose-400 w-24 shrink-0 font-medium">Vol Right (R):</span>
-    <input id="input-vol-right" type="range" min="0" max="1" step="0.01" value="0.75" class="w-full accent-rose-400 cursor-pointer">
-    <span id="lbl-vol-right" class="text-rose-300 font-bold w-10 text-right">75%</span>
-  </div>
-
-  <!-- Stereo Separation / Panning Slider (Default 20%) -->
-  <div class="flex items-center gap-3 pt-1 border-t border-white/5">
-    <span class="text-amber-400 w-24 shrink-0 font-medium" title="0% = Mono mix in both ears; 100% = Hard isolated left/right ears">Panning:</span>
-    <input id="input-stereo-pan" type="range" min="0" max="1" step="0.01" value="0.20" class="w-full accent-amber-400 cursor-pointer">
-    <span id="lbl-stereo-pan" class="text-amber-300 font-bold w-10 text-right">20%</span>
-  </div>
-  <div class="flex justify-between text-[9px] text-slate-500 px-1 -mt-1.5">
-    <span>0% (Mono mix)</span>
-    <span>50% (Wide)</span>
-    <span>100% (Hard L/R)</span>
-  </div>
-</div>
-
-<!-- Sol/Mi Classifier Metrics Sub-Panel -->
-<div id="debug-metric-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2.5 rounded-xl border border-white/10 flex flex-col gap-2.5 text-[11px] font-mono-note pointer-events-auto max-w-2xl w-full hidden">
-  
-  <!-- Metric Mode Selector Switch -->
-  <div class="flex items-center justify-between border-b border-white/10 pb-1.5 text-xs">
-    <div class="flex items-center gap-2">
-      <span class="text-slate-400">Sol/Mi Classifier Metric:</span>
-      <span class="text-[10px] text-slate-500">(Drag markers to adjust thresholds · Scale: 0.0 - 0.8)</span>
-    </div>
-    <div class="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-white/10">
-      <button id="btn-metric-triangle" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">
-        Palm Triangle (△)
-      </button>
-      <button id="btn-metric-rectangle" class="px-2.5 py-1 rounded bg-emerald-500 text-white font-semibold shadow transition-all">
-        Fingers Rectangle (▭)
-      </button>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+  <!-- Top Bar: 3-Flag Selector (Left) & Accessible Title (Center) -->
+  <header class="relative z-20 w-full pt-4 pb-2 px-4 sm:px-8 flex items-center justify-between pointer-events-none">
     
-    <!-- Left Hand Metrics -->
-    <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-sky-500/20">
-      <div class="flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-        <span class="text-sky-300 font-bold uppercase tracking-wider text-[10px]">Left Hand Diagnostics</span>
+    <!-- Top Left: 3 Flags Selector + Range Pill + Tonic / Transposition Pill -->
+    <div class="flex items-center gap-2 pointer-events-auto flex-wrap">
+      
+      <!-- Flag Selector Container -->
+      <div class="flex items-center gap-2 bg-black/40 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/10 shadow-lg">
+        <!-- 1. French Flag (Default Active: Fixed-Do Si) -->
+        <button id="flag-fr" class="flag-btn opacity-100 ring-2 ring-sky-400/90 rounded overflow-hidden p-0.5" title="Français (Do, Ré, Mi, Fa, Sol, La, Si)">
+          <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 3 2">
+            <rect width="1" height="2" x="0" fill="#002395"/>
+            <rect width="1" height="2" x="1" fill="#fff"/>
+            <rect width="1" height="2" x="2" fill="#ED2939"/>
+          </svg>
+        </button>
+
+        <!-- 2. Hungarian Flag (Kodály Solfège: So & Ti) -->
+        <button id="flag-hu" class="flag-btn opacity-30 hover:opacity-85 rounded overflow-hidden p-0.5" title="Magyar / Kodály (Do, Re, Mi, Fa, So, La, Ti)">
+          <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 6 3">
+            <rect width="6" height="1" y="0" fill="#CE2939"/>
+            <rect width="6" height="1" y="1" fill="#FFFFFF"/>
+            <rect width="6" height="1" y="2" fill="#477050"/>
+          </svg>
+        </button>
+
+        <!-- 3. UK Flag (Alphabetical: C, D, E, F, G, A, B) -->
+        <button id="flag-en" class="flag-btn opacity-30 hover:opacity-85 rounded overflow-hidden p-0.5" title="Alphabetical Letters (C, D, E, F, G, A, B)">
+          <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 60 30">
+            <clipPath id="s"><path d="M0,0 v30 h60 v-30 z"/></clipPath>
+            <clipPath id="t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath>
+            <g clip-path="url(#s)">
+              <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+              <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+              <path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#t)" stroke="#C8102E" stroke-width="4"/>
+              <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
+              <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
+            </g>
+          </svg>
+        </button>
       </div>
 
-      <!-- Palm Triangle Metric -->
-      <div class="flex flex-col gap-0.5">
-        <div class="flex justify-between text-[10px] text-slate-400">
-          <span>Palm △ <span class="text-sky-300 font-bold">Ratio: <span id="debug-left-palm-ratio">0.000</span></span></span>
-          <span>Abs: <span id="debug-left-palm-area" class="text-slate-200">0.000</span></span>
-        </div>
-        <!-- Slider Track for Triangle (Interactive) -->
-        <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
-          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
-            <div id="debug-left-palm-bar" class="meter-bar h-full bg-sky-400 w-0"></div>
+      <!-- Pitch Range Pill (↕ Sol₂ – Sol₄) -->
+      <div class="relative">
+        <button id="btn-range-pill" class="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 shadow-lg text-xs font-mono-note text-slate-200 transition-all cursor-pointer">
+          <span class="text-sky-400 font-bold">↕</span>
+          <span id="lbl-range-pill">Sol₂ – Sol₄</span>
+        </button>
+
+        <!-- Range Dual-Slider Popover -->
+        <div id="popover-range" class="glass-card absolute top-full left-0 mt-2 p-3.5 rounded-xl border border-white/15 shadow-2xl flex flex-col gap-2.5 w-72 sm:w-80 hidden z-50">
+          <div class="flex justify-between items-center text-[11px] font-mono-note text-slate-400 border-b border-white/10 pb-1.5">
+            <span>Range: <strong id="lbl-range-current" class="text-sky-300">Sol₂ – Sol₄</strong></span>
+            <span class="text-[10px] text-slate-500">(Drag min & max)</span>
           </div>
-          <div class="threshold-marker-triangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Palm Triangle threshold">
-            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+
+          <!-- Dual Slider Track Container -->
+          <div class="relative w-full h-8 flex items-center select-none pt-2">
+            <div id="range-track-bg" class="w-full h-2 bg-slate-800 rounded-full relative overflow-hidden border border-white/10">
+              <div id="range-highlight-bar" class="absolute top-0 bottom-0 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full"></div>
+            </div>
+            <!-- Min Slider Thumb -->
+            <div id="handle-range-min" class="absolute w-5 h-5 -ml-2.5 bg-sky-400 rounded-full border-2 border-white shadow-[0_0_10px_rgba(56,189,248,0.8)] cursor-ew-resize flex items-center justify-center top-3.5 z-30">
+              <div class="w-1.5 h-1.5 bg-black/60 rounded-full"></div>
+            </div>
+            <!-- Max Slider Thumb -->
+            <div id="handle-range-max" class="absolute w-5 h-5 -ml-2.5 bg-indigo-400 rounded-full border-2 border-white shadow-[0_0_10px_rgba(129,140,248,0.8)] cursor-ew-resize flex items-center justify-center top-3.5 z-30">
+              <div class="w-1.5 h-1.5 bg-black/60 rounded-full"></div>
+            </div>
           </div>
-        </div>
-        <div class="flex justify-between text-[9px] text-slate-500">
-          <span>0.0</span>
-          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-triangle-thresh">0.26</span></span>
-          <span>0.8</span>
+
+          <div class="flex justify-between text-[10px] font-mono-note text-slate-400 pt-1">
+            <span id="lbl-range-min-disp">Min: Sol₂</span>
+            <span id="lbl-range-max-disp">Max: Sol₄</span>
+          </div>
         </div>
       </div>
 
-      <!-- Fingers Rectangle Metric -->
-      <div class="flex flex-col gap-0.5 mt-0.5">
-        <div class="flex justify-between text-[10px] text-slate-400">
-          <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-left-rect-ratio">0.000</span></span></span>
-          <span>Abs: <span id="debug-left-rect-area" class="text-slate-200">0.000</span></span>
-        </div>
-        <!-- Slider Track for Rectangle (Interactive) -->
-        <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
-          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
-            <div id="debug-left-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
+      <!-- Root Note / Tonic Transposition: Textless Tuning Fork Pill -->
+      <div class="relative">
+        <button id="btn-root-pill" class="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/10 shadow-lg text-xs font-mono-note text-slate-200 transition-all cursor-pointer" title="Transposition / Root Note">
+          <!-- Tuning Fork SVG -->
+          <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 3v7a5 5 0 0 0 10 0V3" />
+            <path d="M12 15v6" />
+          </svg>
+          <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]"></span>
+        </button>
+
+        <!-- Circular 12-Segment Ring Popover (Reduced to 2/3 scale: w-40 h-40) -->
+        <div id="popover-root" class="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden z-50 select-none">
+          <div class="relative w-40 h-40 sm:w-44 sm:h-44 rounded-full p-1 bg-black/75 backdrop-blur-xl border border-cyan-500/30 shadow-[0_0_30px_rgba(0,0,0,0.85),0_0_18px_rgba(56,189,248,0.25)] flex items-center justify-center">
+            <svg id="root-dial-svg" class="w-full h-full" viewBox="-115 -115 230 230"></svg>
+            <!-- Center Hub -->
+            <div class="absolute w-10 h-10 rounded-full bg-slate-950/95 border border-cyan-400/40 flex flex-col items-center justify-center pointer-events-none shadow-[0_0_10px_rgba(56,189,248,0.3)]">
+              <span id="lbl-root-hub" class="font-mono-note text-[11px] sm:text-xs font-bold text-cyan-300">C</span>
+            </div>
           </div>
-          <div class="threshold-marker-rectangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Fingers Rectangle threshold">
-            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
-          </div>
         </div>
-        <div class="flex justify-between text-[9px] text-slate-500">
-          <span>0.0</span>
-          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-rectangle-thresh">0.34</span></span>
-          <span>0.8</span>
-        </div>
+      </div>
+
+    </div>
+
+    <!-- Center: High Contrast Title -->
+    <h1 class="font-brand text-sm sm:text-lg md:text-xl font-bold uppercase tracking-widest text-slate-100 title-shadow text-center pr-2">
+      Kodály Interpreter
+    </h1>
+
+    <div class="w-20 hidden sm:block"></div>
+  </header>
+
+  <!-- Floating HUD: Left & Right Voices (Minimalist Floating Text / Suspension Dots) -->
+  <main class="relative z-20 w-full flex-1 flex justify-between items-center px-6 sm:px-14 pointer-events-none">
+    
+    <!-- Left Hand HUD (Screen Left) -->
+    <div id="hud-left" class="flex flex-col items-center justify-center min-w-[7rem] sm:min-w-[9rem]">
+      <div id="note-left" class="font-mono-note text-4xl sm:text-6xl md:text-7xl font-extrabold note-text-left hidden">
+        —
+      </div>
+      <div id="dots-left" class="text-2xl sm:text-3xl font-mono-note text-sky-400/35 suspension-dots">
+        ...
       </div>
     </div>
 
-    <!-- Right Hand Metrics -->
-    <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-rose-500/20">
-      <div class="flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-rose-400"></span>
-        <span class="text-rose-300 font-bold uppercase tracking-wider text-[10px]">Right Hand Diagnostics</span>
+    <!-- Right Hand HUD (Screen Right) -->
+    <div id="hud-right" class="flex flex-col items-center justify-center min-w-[7rem] sm:min-w-[9rem]">
+      <div id="note-right" class="font-mono-note text-4xl sm:text-6xl md:text-7xl font-extrabold note-text-right hidden">
+        —
       </div>
-
-      <!-- Palm Triangle Metric -->
-      <div class="flex flex-col gap-0.5">
-        <div class="flex justify-between text-[10px] text-slate-400">
-          <span>Palm △ <span class="text-rose-300 font-bold">Ratio: <span id="debug-right-palm-ratio">0.000</span></span></span>
-          <span>Abs: <span id="debug-right-palm-area" class="text-slate-200">0.000</span></span>
-        </div>
-        <!-- Slider Track for Triangle (Interactive) -->
-        <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
-          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
-            <div id="debug-right-palm-bar" class="meter-bar h-full bg-rose-400 w-0"></div>
-          </div>
-          <div class="threshold-marker-triangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Palm Triangle threshold">
-            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
-          </div>
-        </div>
-        <div class="flex justify-between text-[9px] text-slate-500">
-          <span>0.0</span>
-          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-triangle-thresh">0.26</span></span>
-          <span>0.8</span>
-        </div>
-      </div>
-
-      <!-- Fingers Rectangle Metric -->
-      <div class="flex flex-col gap-0.5 mt-0.5">
-        <div class="flex justify-between text-[10px] text-slate-400">
-          <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-right-rect-ratio">0.000</span></span></span>
-          <span>Abs: <span id="debug-right-rect-area" class="text-slate-200">0.000</span></span>
-        </div>
-        <!-- Slider Track for Rectangle (Interactive) -->
-        <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
-          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
-            <div id="debug-right-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
-          </div>
-          <div class="threshold-marker-rectangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Fingers Rectangle threshold">
-            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
-          </div>
-        </div>
-        <div class="flex justify-between text-[9px] text-slate-500">
-          <span>0.0</span>
-          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-rectangle-thresh">0.34</span></span>
-          <span>0.8</span>
-        </div>
+      <div id="dots-right" class="text-2xl sm:text-3xl font-mono-note text-rose-400/35 suspension-dots">
+        ...
       </div>
     </div>
 
+  </main>
+
+  <!-- Modular Debug Panel (Toggle with 'D') -->
+  <footer id="debug-panel" class="relative z-20 w-full pb-3 px-4 flex flex-col items-start pointer-events-none hidden gap-2">
+    
+    <!-- Top Debug Bar: Left Action Buttons (Pushed right to clear left scale) & Right 'Debug' Pill (Pushed left to clear right scale) -->
+    <div class="w-full flex items-center justify-between relative pointer-events-auto">
+      
+      <!-- Left side: Debug Feature Buttons with clearance from left pitch scale (~60px) -->
+      <div class="ml-14 sm:ml-16 flex items-center gap-1.5 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/10 shadow-lg text-[11px] font-mono-note">
+        <button id="dbg-toggle-scales" class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition-all font-semibold" title="Toggle side pitch ladders">
+          Scales: ON
+        </button>
+        <button id="dbg-toggle-metric" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Toggle Sol/Mi classifier telemetry panel">
+          Sol/Mi Metric: OFF
+        </button>
+        <button id="dbg-toggle-mesh-slider" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Show normal mode mesh opacity slider">
+          Mesh Opacity
+        </button>
+        <button id="dbg-toggle-volumes" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Show Volumes & Stereo Panning panel">
+          Volumes
+        </button>
+      </div>
+
+      <!-- Right Side: 'Debug' Status Label (Pushed inward from right edge to clear right pitch scale) -->
+      <div class="mr-14 sm:mr-16 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono-note text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.25)] pointer-events-none">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+        Debug
+      </div>
+    </div>
+
+    <!-- Mesh Opacity Slider Sub-Panel (Toggled via 'Mesh Opacity' button) -->
+    <div id="debug-mesh-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2 rounded-xl border border-white/10 flex items-center gap-3 text-xs font-mono-note pointer-events-auto max-w-sm w-full hidden">
+      <span class="text-slate-300 whitespace-nowrap">Mesh Opacity:</span>
+      <input id="input-mesh-opacity" type="range" min="0" max="1" step="0.02" value="0.30" class="w-full accent-sky-400 cursor-pointer">
+      <span id="lbl-mesh-opacity" class="text-sky-300 font-bold w-10 text-right">30%</span>
+    </div>
+
+    <!-- Volumes & Stereo Panning Sub-Panel (Toggled via 'Volumes' button) -->
+    <div id="debug-volumes-panel" class="ml-14 sm:ml-16 glass-card px-4 py-3 rounded-xl border border-white/10 flex flex-col gap-2.5 text-xs font-mono-note pointer-events-auto max-w-md w-full hidden">
+      <div class="flex items-center justify-between border-b border-white/10 pb-1 text-slate-300 text-[11px]">
+        <span class="font-bold text-cyan-300">Audio Volumes & Stereo Mixing</span>
+        <span class="text-slate-500 text-[10px]">Real-time audio controls</span>
+      </div>
+
+      <!-- Left Voice Volume (Default 50%) -->
+      <div class="flex items-center gap-3">
+        <span class="text-sky-400 w-24 shrink-0 font-medium">Vol Left (L):</span>
+        <input id="input-vol-left" type="range" min="0" max="1" step="0.01" value="0.50" class="w-full accent-sky-400 cursor-pointer">
+        <span id="lbl-vol-left" class="text-sky-300 font-bold w-10 text-right">50%</span>
+      </div>
+
+      <!-- Right Voice Volume (Default 75%) -->
+      <div class="flex items-center gap-3">
+        <span class="text-rose-400 w-24 shrink-0 font-medium">Vol Right (R):</span>
+        <input id="input-vol-right" type="range" min="0" max="1" step="0.01" value="0.75" class="w-full accent-rose-400 cursor-pointer">
+        <span id="lbl-vol-right" class="text-rose-300 font-bold w-10 text-right">75%</span>
+      </div>
+
+      <!-- Stereo Separation / Panning Slider (Default 20%) -->
+      <div class="flex items-center gap-3 pt-1 border-t border-white/5">
+        <span class="text-amber-400 w-24 shrink-0 font-medium" title="0% = Mono mix in both ears; 100% = Hard isolated left/right ears">Panning:</span>
+        <input id="input-stereo-pan" type="range" min="0" max="1" step="0.01" value="0.20" class="w-full accent-amber-400 cursor-pointer">
+        <span id="lbl-stereo-pan" class="text-amber-300 font-bold w-10 text-right">20%</span>
+      </div>
+      <div class="flex justify-between text-[9px] text-slate-500 px-1 -mt-1.5">
+        <span>0% (Mono mix)</span>
+        <span>50% (Wide)</span>
+        <span>100% (Hard L/R)</span>
+      </div>
+    </div>
+
+    <!-- Sol/Mi Classifier Metrics Sub-Panel -->
+    <div id="debug-metric-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2.5 rounded-xl border border-white/10 flex flex-col gap-2.5 text-[11px] font-mono-note pointer-events-auto max-w-2xl w-full hidden">
+      
+      <!-- Metric Mode Selector Switch -->
+      <div class="flex items-center justify-between border-b border-white/10 pb-1.5 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400">Sol/Mi Classifier Metric:</span>
+          <span class="text-[10px] text-slate-500">(Drag markers to adjust thresholds · Scale: 0.0 - 0.8)</span>
+        </div>
+        <div class="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-white/10">
+          <button id="btn-metric-triangle" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">
+            Palm Triangle (△)
+          </button>
+          <button id="btn-metric-rectangle" class="px-2.5 py-1 rounded bg-emerald-500 text-white font-semibold shadow transition-all">
+            Fingers Rectangle (▭)
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+        
+        <!-- Left Hand Metrics -->
+        <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-sky-500/20">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+            <span class="text-sky-300 font-bold uppercase tracking-wider text-[10px]">Left Hand Diagnostics</span>
+          </div>
+
+          <!-- Palm Triangle Metric -->
+          <div class="flex flex-col gap-0.5">
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span>Palm △ <span class="text-sky-300 font-bold">Ratio: <span id="debug-left-palm-ratio">0.000</span></span></span>
+              <span>Abs: <span id="debug-left-palm-area" class="text-slate-200">0.000</span></span>
+            </div>
+            <!-- Slider Track for Triangle (Interactive) -->
+            <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+                <div id="debug-left-palm-bar" class="meter-bar h-full bg-sky-400 w-0"></div>
+              </div>
+              <div class="threshold-marker-triangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Palm Triangle threshold">
+                <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+              </div>
+            </div>
+            <div class="flex justify-between text-[9px] text-slate-500">
+              <span>0.0</span>
+              <span class="text-amber-400 font-bold">Thresh: <span class="lbl-triangle-thresh">0.26</span></span>
+              <span>0.8</span>
+            </div>
+          </div>
+
+          <!-- Fingers Rectangle Metric -->
+          <div class="flex flex-col gap-0.5 mt-0.5">
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-left-rect-ratio">0.000</span></span></span>
+              <span>Abs: <span id="debug-left-rect-area" class="text-slate-200">0.000</span></span>
+            </div>
+            <!-- Slider Track for Rectangle (Interactive) -->
+            <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+                <div id="debug-left-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
+              </div>
+              <div class="threshold-marker-rectangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Fingers Rectangle threshold">
+                <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+              </div>
+            </div>
+            <div class="flex justify-between text-[9px] text-slate-500">
+              <span>0.0</span>
+              <span class="text-amber-400 font-bold">Thresh: <span class="lbl-rectangle-thresh">0.34</span></span>
+              <span>0.8</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Hand Metrics -->
+        <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-rose-500/20">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+            <span class="text-rose-300 font-bold uppercase tracking-wider text-[10px]">Right Hand Diagnostics</span>
+          </div>
+
+          <!-- Palm Triangle Metric -->
+          <div class="flex flex-col gap-0.5">
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span>Palm △ <span class="text-rose-300 font-bold">Ratio: <span id="debug-right-palm-ratio">0.000</span></span></span>
+              <span>Abs: <span id="debug-right-palm-area" class="text-slate-200">0.000</span></span>
+            </div>
+            <!-- Slider Track for Triangle (Interactive) -->
+            <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+                <div id="debug-right-palm-bar" class="meter-bar h-full bg-rose-400 w-0"></div>
+              </div>
+              <div class="threshold-marker-triangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Palm Triangle threshold">
+                <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+              </div>
+            </div>
+            <div class="flex justify-between text-[9px] text-slate-500">
+              <span>0.0</span>
+              <span class="text-amber-400 font-bold">Thresh: <span class="lbl-triangle-thresh">0.26</span></span>
+              <span>0.8</span>
+            </div>
+          </div>
+
+          <!-- Fingers Rectangle Metric -->
+          <div class="flex flex-col gap-0.5 mt-0.5">
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-right-rect-ratio">0.000</span></span></span>
+              <span>Abs: <span id="debug-right-rect-area" class="text-slate-200">0.000</span></span>
+            </div>
+            <!-- Slider Track for Rectangle (Interactive) -->
+            <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+                <div id="debug-right-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
+              </div>
+              <div class="threshold-marker-rectangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Fingers Rectangle threshold">
+                <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+              </div>
+            </div>
+            <div class="flex justify-between text-[9px] text-slate-500">
+              <span>0.0</span>
+              <span class="text-amber-400 font-bold">Thresh: <span class="lbl-rectangle-thresh">0.34</span></span>
+              <span>0.8</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+  <!-- Start Modal -->
+  <div id="start-overlay" class="absolute inset-0 z-50 bg-[#06090e]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500">
+    <div class="glass-card max-w-sm w-full p-8 rounded-3xl border border-white/10 flex flex-col items-center shadow-2xl">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-500 to-rose-500 p-0.5 mb-5 flex items-center justify-center shadow-lg shadow-sky-500/25">
+        <div class="w-full h-full bg-[#090d16] rounded-2xl flex items-center justify-center">
+          <svg class="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </div>
+      </div>
+      <h2 class="font-brand text-2xl font-bold text-white mb-2">Kodály Interpreter</h2>
+      <p class="text-slate-400 text-xs mb-5 font-normal">Dual-hand Solfège vision synthesizer</p>
+      <button id="start-btn" class="w-full py-3.5 px-6 rounded-xl font-medium tracking-wide bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-xl shadow-sky-500/25 active:scale-95 transition-all duration-200 pointer-events-auto">
+        Start Camera & Sound
+      </button>
+    </div>
   </div>
-</div>
+
+  <!-- Animated Loading Overlay (Vector Line-Art Kodály Hand Signs) -->
+  <div id="loading-overlay" class="absolute inset-0 z-40 bg-[#06090e]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center pointer-events-none opacity-0 transition-opacity duration-500">
+    <div class="flex flex-col items-center">
+      <!-- 1:1 Aspect Frame for the Cyan Vector Hand Sign -->
+      <div class="w-40 h-40 sm:w-48 sm:h-48 relative overflow-hidden rounded-2xl bg-black/60 border border-cyan-500/20 shadow-[0_0_30px_rgba(56,189,248,0.2)] mb-4 flex items-center justify-center">
+        <svg id="loading-hand-svg" 
+             class="w-32 h-32 sm:w-36 sm:h-36 transition-all duration-300 ease-in-out text-cyan-400 drop-shadow-[0_0_16px_rgba(56,189,248,0.65)]" 
+             viewBox="0 0 100 100" 
+             fill="none" 
+             stroke="currentColor" 
+             stroke-width="2.2" 
+             stroke-linecap="round" 
+             stroke-linejoin="round">
+        </svg>
+      </div>
+      <div class="text-xs text-slate-400 tracking-wider font-light mt-2 animate-pulse">
+        Initializing vision model & camera...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. SCALE REPOSITORY, DIATONIC POOL & TRANSPOSITION
+       ========================================================================== */
+    // Complete diatonic pool from Do2 to Do5
+    const ALL_DIATONIC_PITCHES = [
+      "Do2", "Re2", "Mi2", "Fa2", "Sol2", "La2", "Ti2",
+      "Do3", "Re3", "Mi3", "Fa3", "Sol3", "La3", "Ti3",
+      "Do4", "Re4", "Mi4", "Fa4", "Sol4", "La4", "Ti4",
+      "Do5"
+    ];
+
+    // Standard base frequencies in C Major (A4 = 440 Hz)
+    const BASE_FREQUENCIES = {
+      "Do2": 65.406,  "Re2": 73.416,  "Mi2": 82.407,  "Fa2": 87.307,  "Sol2": 97.999,  "La2": 110.000, "Ti2": 123.471,
+      "Do3": 130.813, "Re3": 146.832, "Mi3": 164.814, "Fa3": 174.614, "Sol3": 195.998, "La3": 220.000, "Ti3": 246.942,
+      "Do4": 261.626, "Re4": 293.665, "Mi4": 329.628, "Fa4": 349.228, "Sol4": 391.995, "La4": 440.000, "Ti4": 493.883,
+      "Do5": 523.251
+    };
+
+    const CHROMATIC_ROOTS = [
+      { name: "C", offset: 0 },
+      { name: "C♯", offset: 1 },
+      { name: "D", offset: 2 },
+      { name: "D♯", offset: 3 },
+      { name: "E", offset: 4 },
+      { name: "F", offset: 5 },
+      { name: "F♯", offset: 6 },
+      { name: "G", offset: 7 },
+      { name: "G♯", offset: 8 },
+      { name: "A", offset: 9 },
+      { name: "A♯", offset: 10 },
+      { name: "B", offset: 11 }
+    ];
+
+    let currentRootIndex = 0; // 0 = C
+
+    // Range indices inside ALL_DIATONIC_PITCHES: Default Sol2 (idx 4) to Sol4 (idx 18)
+    let minRangeIndex = 4;  // Sol2
+    let maxRangeIndex = 18; // Sol4
+
+    // Top-to-bottom active scale pitches
+    let SCALE_PITCHES = [];
+    let NOTE_SLOT_CENTERS = {};
+
+    function rebuildActiveScale() {
+      if (maxRangeIndex <= minRangeIndex) {
+        maxRangeIndex = minRangeIndex + 1;
+      }
+      // Top note to bottom note for vertical screen representation
+      SCALE_PITCHES = [];
+      for (let i = maxRangeIndex; i >= minRangeIndex; i--) {
+        SCALE_PITCHES.push(ALL_DIATONIC_PITCHES[i]);
+      }
+
+      NOTE_SLOT_CENTERS = {};
+      SCALE_PITCHES.forEach((pitch, idx) => {
+        NOTE_SLOT_CENTERS[pitch] = (idx + 0.5) / SCALE_PITCHES.length;
+      });
+
+      updateRangeUI();
+    }
+
+    function getTransposedFrequency(noteName) {
+      const baseFreq = BASE_FREQUENCIES[noteName];
+      if (!baseFreq) return 261.63;
+      const semitones = CHROMATIC_ROOTS[currentRootIndex].offset;
+      return baseFreq * Math.pow(2, semitones / 12);
+    }
+
+    const NOTE_TRANSLATIONS = {
+      FR: {
+        "Do": "Do", "Re": "Ré", "Mi": "Mi", "Fa": "Fa", "Sol": "Sol", "La": "La", "Ti": "Si"
+      },
+      HU: {
+        "Do": "Do", "Re": "Re", "Mi": "Mi", "Fa": "Fa", "Sol": "So", "La": "La", "Ti": "Ti"
+      },
+      EN: {
+        "Do": "C", "Re": "D", "Mi": "E", "Fa": "F", "Sol": "G", "La": "A", "Ti": "B"
+      }
+    };
+
+    // Chromatic note names for the 12-segment wheel per language
+    const CHROMATIC_NAMES = {
+      FR: ["Do", "Do♯", "Ré", "Ré♯", "Mi", "Fa", "Fa♯", "Sol", "Sol♯", "La", "La♯", "Si"],
+      HU: ["Do", "Di", "Re", "Ri", "Mi", "Fa", "Fi", "So", "Si", "La", "Li", "Ti"],
+      EN: ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"]
+    };
+
+    let currentLanguage = 'FR';
+    
+    // Default classifier set to Fingers Rectangle (▭)
+    let activeClassifierMetric = 'rectangle';
+    let isDebugVisible = false;
+
+    // Sub-debug states: Scales ON by default when pressing D, others OFF
+    let showDebugScales = true;
+    let showDebugMetric = false;
+    let showDebugMeshSlider = false;
+    let showDebugVolumes = false;
+    let normalMeshOpacity = 0.30;
+
+    const MAX_SLIDER_RATIO = 0.80;
+    let thresholdTriangle = 0.26;
+    let thresholdRectangle = 0.34;
+
+    function formatNoteName(rawNote) {
+      if (!rawNote) return '—';
+      const root = rawNote.replace(/[0-9]/g, '');
+      const octave = rawNote.replace(/\D/g, '');
+      const translatedRoot = (NOTE_TRANSLATIONS[currentLanguage] && NOTE_TRANSLATIONS[currentLanguage][root]) || root;
+      return `${translatedRoot}${octave}`;
+    }
+
+    /* Range & Root UI Elements */
+    const btnRangePill = document.getElementById('btn-range-pill');
+    const popoverRange = document.getElementById('popover-range');
+    const lblRangePill = document.getElementById('lbl-range-pill');
+    const lblRangeCurrent = document.getElementById('lbl-range-current');
+    const lblRangeMinDisp = document.getElementById('lbl-range-min-disp');
+    const lblRangeMaxDisp = document.getElementById('lbl-range-max-disp');
+    const rangeHighlightBar = document.getElementById('range-highlight-bar');
+    const handleRangeMin = document.getElementById('handle-range-min');
+    const handleRangeMax = document.getElementById('handle-range-max');
+
+    const btnRootPill = document.getElementById('btn-root-pill');
+    const popoverRoot = document.getElementById('popover-root');
+    const rootDialSvg = document.getElementById('root-dial-svg');
+    const lblRootHub = document.getElementById('lbl-root-hub');
+
+    function updateRangeUI() {
+      const minName = formatNoteName(ALL_DIATONIC_PITCHES[minRangeIndex]);
+      const maxName = formatNoteName(ALL_DIATONIC_PITCHES[maxRangeIndex]);
+      const rangeStr = `${minName} – ${maxName}`;
+
+      lblRangePill.textContent = rangeStr;
+      lblRangeCurrent.textContent = rangeStr;
+      lblRangeMinDisp.textContent = `Min: ${minName}`;
+      lblRangeMaxDisp.textContent = `Max: ${maxName}`;
+
+      const totalSteps = ALL_DIATONIC_PITCHES.length - 1;
+      const minPct = (minRangeIndex / totalSteps) * 100;
+      const maxPct = (maxRangeIndex / totalSteps) * 100;
+
+      handleRangeMin.style.left = `${minPct}%`;
+      handleRangeMax.style.left = `${maxPct}%`;
+      rangeHighlightBar.style.left = `${minPct}%`;
+      rangeHighlightBar.style.width = `${maxPct - minPct}%`;
+    }
+
+    btnRangePill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      popoverRange.classList.toggle('hidden');
+      popoverRoot.classList.add('hidden');
+    });
+
+    btnRootPill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      popoverRoot.classList.toggle('hidden');
+      popoverRange.classList.add('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!popoverRange.contains(e.target) && e.target !== btnRangePill) {
+        popoverRange.classList.add('hidden');
+      }
+      if (!popoverRoot.contains(e.target) && !btnRootPill.contains(e.target)) {
+        popoverRoot.classList.add('hidden');
+      }
+    });
+
+    /* ==========================================================================
+       1B. CIRCULAR 12-SEGMENT WHEEL BUILDER & IMMEDIATE AUDIO UPDATE
+       ========================================================================== */
+    function buildRootDial() {
+      rootDialSvg.innerHTML = '';
+      const names = CHROMATIC_NAMES[currentLanguage] || CHROMATIC_NAMES.FR;
+      const rInner = 36;
+      const rOuter = 105;
+      const angleStep = (2 * Math.PI) / 12;
+
+      for (let i = 0; i < 12; i++) {
+        // Start C at 12 o'clock (-PI / 2)
+        const aStart = -Math.PI / 2 + i * angleStep;
+        const aEnd = aStart + angleStep;
+        const aMid = (aStart + aEnd) / 2;
+
+        const x1 = Math.cos(aStart) * rInner;
+        const y1 = Math.sin(aStart) * rInner;
+        const x2 = Math.cos(aStart) * rOuter;
+        const y2 = Math.sin(aStart) * rOuter;
+        const x3 = Math.cos(aEnd) * rOuter;
+        const y3 = Math.sin(aEnd) * rOuter;
+        const x4 = Math.cos(aEnd) * rInner;
+        const y4 = Math.sin(aEnd) * rInner;
+
+        const pathData = `M ${x1} ${y1} L ${x2} ${y2} A ${rOuter} ${rOuter} 0 0 1 ${x3} ${y3} L ${x4} ${y4} A ${rInner} ${rInner} 0 0 0 ${x1} ${y1} Z`;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathData);
+        path.setAttribute('class', `dial-sector ${i === currentRootIndex ? 'active-root' : ''}`);
+        path.setAttribute('fill', i === currentRootIndex ? 'rgba(56, 189, 248, 0.75)' : 'rgba(255, 255, 255, 0.05)');
+        path.setAttribute('stroke', 'rgba(255, 255, 255, 0.12)');
+        path.setAttribute('stroke-width', '1');
+
+        path.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setRootIndex(i);
+        });
+
+        rootDialSvg.appendChild(path);
+
+        // Segment text label
+        const rText = (rInner + rOuter) / 2;
+        const tx = Math.cos(aMid) * rText;
+        const ty = Math.sin(aMid) * rText;
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', tx);
+        text.setAttribute('y', ty + 3.5);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', i === currentRootIndex ? '#ffffff' : '#94a3b8');
+        text.setAttribute('font-size', '10');
+        text.setAttribute('font-family', 'JetBrains Mono, monospace');
+        text.setAttribute('font-weight', i === currentRootIndex ? 'bold' : 'normal');
+        text.setAttribute('pointer-events', 'none');
+        text.textContent = names[i];
+
+        rootDialSvg.appendChild(text);
+      }
+
+      lblRootHub.textContent = names[currentRootIndex];
+    }
+
+    function setRootIndex(idx) {
+      currentRootIndex = idx;
+      buildRootDial();
+
+      // Immediately retarget active oscillators to the transposed frequency
+      ['left', 'right'].forEach(side => {
+        const tracker = (side === 'left') ? leftHandTracker : rightHandTracker;
+        if (tracker.stableNote) {
+          synth.setNote(side, tracker.stableNote, true);
+        }
+      });
+    }
+
+    // Dual Range Slider Pointer Drag Logic
+    function setupDualRangeSlider() {
+      const totalSteps = ALL_DIATONIC_PITCHES.length - 1;
+      const track = document.getElementById('range-track-bg');
+      let activeThumb = null;
+
+      function updateThumbPos(e) {
+        if (!activeThumb) return;
+        const rect = track.getBoundingClientRect();
+        const fraction = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+        const step = Math.round(fraction * totalSteps);
+
+        if (activeThumb === handleRangeMin) {
+          minRangeIndex = Math.min(step, maxRangeIndex - 2);
+        } else if (activeThumb === handleRangeMax) {
+          maxRangeIndex = Math.max(step, minRangeIndex + 2);
+        }
+        rebuildActiveScale();
+      }
+
+      handleRangeMin.addEventListener('pointerdown', (e) => {
+        activeThumb = handleRangeMin;
+        handleRangeMin.setPointerCapture(e.pointerId);
+      });
+      handleRangeMax.addEventListener('pointerdown', (e) => {
+        activeThumb = handleRangeMax;
+        handleRangeMax.setPointerCapture(e.pointerId);
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (activeThumb) updateThumbPos(e);
+      });
+      window.addEventListener('pointerup', () => {
+        activeThumb = null;
+      });
+    }
+
+    setupDualRangeSlider();
+    buildRootDial();
+    rebuildActiveScale();
+
+    const flagFr = document.getElementById('flag-fr');
+    const flagHu = document.getElementById('flag-hu');
+    const flagEn = document.getElementById('flag-en');
+
+    function updateFlagUI(selected) {
+      currentLanguage = selected;
+      [
+        { btn: flagFr, id: 'FR' },
+        { btn: flagHu, id: 'HU' },
+        { btn: flagEn, id: 'EN' }
+      ].forEach(({ btn, id }) => {
+        if (id === selected) {
+          btn.classList.add('opacity-100', 'ring-2', 'ring-sky-400/90');
+          btn.classList.remove('opacity-30');
+        } else {
+          btn.classList.remove('opacity-100', 'ring-2', 'ring-sky-400/90');
+          btn.classList.add('opacity-30');
+        }
+      });
+      buildRootDial();
+      updateRangeUI();
+    }
+
+    flagFr.addEventListener('click', () => updateFlagUI('FR'));
+    flagHu.addEventListener('click', () => updateFlagUI('HU'));
+    flagEn.addEventListener('click', () => updateFlagUI('EN'));
+
+    const btnMetricTriangle = document.getElementById('btn-metric-triangle');
+    const btnMetricRectangle = document.getElementById('btn-metric-rectangle');
+
+    btnMetricTriangle.addEventListener('click', () => {
+      activeClassifierMetric = 'triangle';
+      btnMetricTriangle.className = 'px-2.5 py-1 rounded bg-sky-500 text-white font-semibold shadow transition-all';
+      btnMetricRectangle.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all';
+    });
+
+    btnMetricRectangle.addEventListener('click', () => {
+      activeClassifierMetric = 'rectangle';
+      btnMetricRectangle.className = 'px-2.5 py-1 rounded bg-emerald-500 text-white font-semibold shadow transition-all';
+      btnMetricTriangle.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all';
+    });
+
+    // Debug Sub-Buttons: Scales, Metric, Mesh Opacity Slider, Volumes
+    const dbgToggleScales = document.getElementById('dbg-toggle-scales');
+    const dbgToggleMetric = document.getElementById('dbg-toggle-metric');
+    const dbgToggleMeshSlider = document.getElementById('dbg-toggle-mesh-slider');
+    const dbgToggleVolumes = document.getElementById('dbg-toggle-volumes');
+    const debugMetricPanel = document.getElementById('debug-metric-panel');
+    const debugMeshPanel = document.getElementById('debug-mesh-panel');
+    const debugVolumesPanel = document.getElementById('debug-volumes-panel');
+    const inputMeshOpacity = document.getElementById('input-mesh-opacity');
+    const lblMeshOpacity = document.getElementById('lbl-mesh-opacity');
+
+    const inputVolLeft = document.getElementById('input-vol-left');
+    const lblVolLeft = document.getElementById('lbl-vol-left');
+    const inputVolRight = document.getElementById('input-vol-right');
+    const lblVolRight = document.getElementById('lbl-vol-right');
+    const inputStereoPan = document.getElementById('input-stereo-pan');
+    const lblStereoPan = document.getElementById('lbl-stereo-pan');
+
+    dbgToggleScales.addEventListener('click', () => {
+      showDebugScales = !showDebugScales;
+      dbgToggleScales.textContent = `Scales: ${showDebugScales ? 'ON' : 'OFF'}`;
+      if (showDebugScales) {
+        dbgToggleScales.className = 'px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition-all font-semibold';
+      } else {
+        dbgToggleScales.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700 transition-all font-semibold';
+      }
+    });
+
+    dbgToggleMetric.addEventListener('click', () => {
+      showDebugMetric = !showDebugMetric;
+      dbgToggleMetric.textContent = `Sol/Mi Metric: ${showDebugMetric ? 'ON' : 'OFF'}`;
+      debugMetricPanel.classList.toggle('hidden', !showDebugMetric);
+      if (showDebugMetric) {
+        dbgToggleMetric.className = 'px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition-all font-semibold';
+      } else {
+        dbgToggleMetric.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700 transition-all font-semibold';
+      }
+    });
+
+    dbgToggleMeshSlider.addEventListener('click', () => {
+      showDebugMeshSlider = !showDebugMeshSlider;
+      debugMeshPanel.classList.toggle('hidden', !showDebugMeshSlider);
+      if (showDebugMeshSlider) {
+        dbgToggleMeshSlider.className = 'px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30 transition-all font-semibold';
+      } else {
+        dbgToggleMeshSlider.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold';
+      }
+    });
+
+    dbgToggleVolumes.addEventListener('click', () => {
+      showDebugVolumes = !showDebugVolumes;
+      debugVolumesPanel.classList.toggle('hidden', !showDebugVolumes);
+      if (showDebugVolumes) {
+        dbgToggleVolumes.className = 'px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all font-semibold';
+      } else {
+        dbgToggleVolumes.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold';
+      }
+    });
+
+    inputMeshOpacity.addEventListener('input', (e) => {
+      normalMeshOpacity = parseFloat(e.target.value);
+      lblMeshOpacity.textContent = `${Math.round(normalMeshOpacity * 100)}%`;
+    });
+
+    inputVolLeft.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      lblVolLeft.textContent = `${Math.round(val * 100)}%`;
+      synth.setVoiceVolume('left', val);
+    });
+
+    inputVolRight.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      lblVolRight.textContent = `${Math.round(val * 100)}%`;
+      synth.setVoiceVolume('right', val);
+    });
+
+    inputStereoPan.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      lblStereoPan.textContent = `${Math.round(val * 100)}%`;
+      synth.setStereoPanning(val);
+    });
+
+    // Interactive Slider / Pointer Dragging Logic for Thresholds
+    function updateThresholdPositions() {
+      const trianglePct = Math.min(Math.max((thresholdTriangle / MAX_SLIDER_RATIO) * 100, 0), 100);
+      const rectanglePct = Math.min(Math.max((thresholdRectangle / MAX_SLIDER_RATIO) * 100, 0), 100);
+
+      document.querySelectorAll('.threshold-marker-triangle').forEach(el => {
+        el.style.left = `${trianglePct}%`;
+      });
+      document.querySelectorAll('.lbl-triangle-thresh').forEach(el => {
+        el.textContent = thresholdTriangle.toFixed(2);
+      });
+
+      document.querySelectorAll('.threshold-marker-rectangle').forEach(el => {
+        el.style.left = `${rectanglePct}%`;
+      });
+      document.querySelectorAll('.lbl-rectangle-thresh').forEach(el => {
+        el.textContent = thresholdRectangle.toFixed(2);
+      });
+    }
+
+    function initInteractiveSliders() {
+      let isDragging = null;
+
+      function updateValueFromPointer(track, clientX) {
+        const rect = track.getBoundingClientRect();
+        const fraction = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+        const newThresh = Math.round(fraction * MAX_SLIDER_RATIO * 100) / 100;
+        
+        if (track.dataset.metric === 'triangle') {
+          thresholdTriangle = newThresh;
+        } else {
+          thresholdRectangle = newThresh;
+        }
+        updateThresholdPositions();
+      }
+
+      document.querySelectorAll('.slider-track-triangle, .slider-track-rectangle').forEach(track => {
+        track.addEventListener('pointerdown', (e) => {
+          isDragging = track;
+          track.setPointerCapture(e.pointerId);
+          updateValueFromPointer(track, e.clientX);
+        });
+
+        track.addEventListener('pointermove', (e) => {
+          if (isDragging === track) {
+            updateValueFromPointer(track, e.clientX);
+          }
+        });
+
+        track.addEventListener('pointerup', (e) => {
+          if (isDragging === track) {
+            track.releasePointerCapture(e.pointerId);
+            isDragging = null;
+          }
+        });
+
+        track.addEventListener('pointercancel', () => {
+          isDragging = null;
+        });
+      });
+
+      updateThresholdPositions();
+    }
+
+    initInteractiveSliders();
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'd' || e.key === 'D') {
+        isDebugVisible = !isDebugVisible;
+        document.getElementById('debug-panel').classList.toggle('hidden', !isDebugVisible);
+        if (isDebugVisible) {
+          // When opening debug with D: Scales ON, others OFF
+          showDebugScales = true;
+          dbgToggleScales.textContent = 'Scales: ON';
+          dbgToggleScales.className = 'px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition-all font-semibold';
+
+          showDebugMetric = false;
+          dbgToggleMetric.textContent = 'Sol/Mi Metric: OFF';
+          dbgToggleMetric.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700 transition-all font-semibold';
+          debugMetricPanel.classList.add('hidden');
+
+          showDebugMeshSlider = false;
+          dbgToggleMeshSlider.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold';
+          debugMeshPanel.classList.add('hidden');
+
+          showDebugVolumes = false;
+          dbgToggleVolumes.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold';
+          debugVolumesPanel.classList.add('hidden');
+        }
+      }
+    });
+
+    /* ==========================================================================
+       2. DYNAMIC FULL-HEIGHT OCTAVE RESOLVER (Dynamic Scale Proximity)
+       ========================================================================== */
+    function resolveProximityNote(sign, landmarks) {
+      if (!sign || !landmarks || landmarks.length === 0 || SCALE_PITCHES.length === 0) return null;
+
+      let sumY = 0;
+      for (let i = 0; i < landmarks.length; i++) {
+        sumY += landmarks[i].y;
+      }
+      const handY = sumY / landmarks.length;
+
+      // Filter all pitches currently present in active SCALE_PITCHES that match the sign
+      const candidatePitches = SCALE_PITCHES.filter(pitch => pitch.startsWith(sign));
+
+      if (candidatePitches.length === 0) return null;
+
+      let closestPitch = candidatePitches[0];
+      let minDistance = Math.abs(handY - NOTE_SLOT_CENTERS[closestPitch]);
+
+      for (let i = 1; i < candidatePitches.length; i++) {
+        const candidate = candidatePitches[i];
+        const dist = Math.abs(handY - NOTE_SLOT_CENTERS[candidate]);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestPitch = candidate;
+        }
+      }
+
+      return closestPitch;
+    }
+
+    /* ==========================================================================
+       3. AUDIO SYNTHESIS ENGINE (Smooth Right vs Raspy Left + Transposition + Panning)
+       ========================================================================== */
+    class HarmoniousDualSynth {
+      constructor() {
+        this.ctx = null;
+        this.voices = { left: null, right: null };
+        this.masterGain = null;
+        // Default volumes: Left 50%, Right 75%, Panning 20%
+        this.voiceGains = { left: 0.50, right: 0.75 };
+        this.stereoSpread = 0.20; // 0 = mono mix, 1 = hard isolated L/R
+      }
+
+      init() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContextClass();
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.72, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+
+        const rightFilter = this.ctx.createBiquadFilter();
+        rightFilter.type = 'lowpass';
+        rightFilter.frequency.setValueAtTime(950, this.ctx.currentTime);
+        rightFilter.Q.setValueAtTime(0.65, this.ctx.currentTime);
+
+        const rightPanner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (rightPanner) {
+          rightPanner.pan.setValueAtTime(this.stereoSpread, this.ctx.currentTime);
+          rightFilter.connect(rightPanner);
+          rightPanner.connect(this.masterGain);
+        } else {
+          rightFilter.connect(this.masterGain);
+        }
+
+        this.voices.right = this.createVoice(rightFilter, 'sine', 'triangle', false, rightPanner);
+
+        const leftFilter = this.ctx.createBiquadFilter();
+        leftFilter.type = 'lowpass';
+        leftFilter.frequency.setValueAtTime(1400, this.ctx.currentTime);
+        leftFilter.Q.setValueAtTime(2.4, this.ctx.currentTime);
+
+        const leftPanner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (leftPanner) {
+          leftPanner.pan.setValueAtTime(-this.stereoSpread, this.ctx.currentTime);
+          leftFilter.connect(leftPanner);
+          leftPanner.connect(this.masterGain);
+        } else {
+          leftFilter.connect(this.masterGain);
+        }
+
+        this.voices.left = this.createVoice(leftFilter, 'sawtooth', 'square', true, leftPanner);
+      }
+
+      createVoice(destNode, type1, type2, isRaspy, pannerNode) {
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+
+        osc1.type = type1;
+        osc2.type = type2;
+
+        osc1.detune.setValueAtTime(isRaspy ? -3 : -1.5, this.ctx.currentTime);
+        osc2.detune.setValueAtTime(isRaspy ? 2 : 1.5, this.ctx.currentTime);
+
+        const mix1 = this.ctx.createGain();
+        const mix2 = this.ctx.createGain();
+        mix1.gain.setValueAtTime(isRaspy ? 0.48 : 0.75, this.ctx.currentTime);
+        mix2.gain.setValueAtTime(isRaspy ? 0.22 : 0.25, this.ctx.currentTime);
+
+        osc1.connect(mix1);
+        osc2.connect(mix2);
+        mix1.connect(gainNode);
+        mix2.connect(gainNode);
+
+        gainNode.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+        gainNode.connect(destNode);
+
+        osc1.start();
+        osc2.start();
+
+        return { osc1, osc2, gain: gainNode, isPlaying: false, currentNote: null, isRaspy, panner: pannerNode };
+      }
+
+      setVoiceVolume(side, volumeFactor) {
+        this.voiceGains[side] = volumeFactor;
+        if (this.ctx && this.voices[side] && this.voices[side].isPlaying) {
+          const now = this.ctx.currentTime;
+          const baseGain = this.voices[side].isRaspy ? 0.24 : 0.28;
+          this.voices[side].gain.gain.cancelScheduledValues(now);
+          this.voices[side].gain.gain.setTargetAtTime(baseGain * volumeFactor, now, 0.02);
+        }
+      }
+
+      setStereoPanning(spreadRatio) {
+        this.stereoSpread = spreadRatio; // 0 to 1
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        // spread 0 -> left pan = 0, right pan = 0 (mono mix in both ears)
+        // spread 1 -> left pan = -1.0, right pan = +1.0 (hard isolated)
+        if (this.voices.left && this.voices.left.panner) {
+          this.voices.left.panner.pan.cancelScheduledValues(now);
+          this.voices.left.panner.pan.setTargetAtTime(-spreadRatio, now, 0.02);
+        }
+        if (this.voices.right && this.voices.right.panner) {
+          this.voices.right.panner.pan.cancelScheduledValues(now);
+          this.voices.right.panner.pan.setTargetAtTime(spreadRatio, now, 0.02);
+        }
+      }
+
+      setNote(side, noteName, forceUpdate = false) {
+        if (!this.ctx) return;
+        const voice = this.voices[side];
+        if (!voice) return;
+
+        const freq = getTransposedFrequency(noteName);
+        if (!freq) return;
+
+        const now = this.ctx.currentTime;
+        if (!voice.isPlaying || voice.currentNote !== noteName || forceUpdate) {
+          voice.osc1.frequency.cancelScheduledValues(now);
+          voice.osc2.frequency.cancelScheduledValues(now);
+
+          voice.osc1.frequency.setTargetAtTime(freq, now, 0.028);
+          voice.osc2.frequency.setTargetAtTime(voice.isRaspy ? freq : freq * 1.002, now, 0.028);
+
+          const baseGain = voice.isRaspy ? 0.24 : 0.28;
+          const targetGain = baseGain * (this.voiceGains[side] ?? (side === 'left' ? 0.50 : 0.75));
+
+          voice.gain.gain.cancelScheduledValues(now);
+          voice.gain.gain.setTargetAtTime(targetGain, now, 0.035);
+
+          voice.isPlaying = true;
+          voice.currentNote = noteName;
+        }
+      }
+
+      releaseVoice(side) {
+        if (!this.ctx) return;
+        const voice = this.voices[side];
+        if (!voice || !voice.isPlaying) return;
+
+        const now = this.ctx.currentTime;
+        voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setTargetAtTime(0.0001, now, 0.05);
+        voice.isPlaying = false;
+        voice.currentNote = null;
+      }
+    }
+
+    const synth = new HarmoniousDualSynth();
+
+    /* ==========================================================================
+       4. GESTURE RECOGNITION (Geometry + Tunable Thresholds)
+       ========================================================================== */
+    function classifyKodalyGesture(landmarks) {
+      const dist = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+      const wrist = landmarks[0];
+      const thumbTip = landmarks[4];
+      const indexMcp = landmarks[5], indexPip = landmarks[6], indexDip = landmarks[7], indexTip = landmarks[8];
+      const middleMcp = landmarks[9], middlePip = landmarks[10], middleDip = landmarks[11], middleTip = landmarks[12];
+      const ringMcp = landmarks[13], ringPip = landmarks[14], ringDip = landmarks[15], ringTip = landmarks[16];
+      const pinkyMcp = landmarks[17], pinkyPip = landmarks[18], pinkyDip = landmarks[19], pinkyTip = landmarks[20];
+
+      const isExt = (tip, pip, mcp) => dist(tip, wrist) > dist(pip, wrist) * 1.15 && dist(tip, mcp) > dist(pip, mcp);
+      const indexExt = isExt(indexTip, indexPip, indexMcp);
+      const middleExt = isExt(middleTip, middlePip, middleMcp);
+      const ringExt = isExt(ringTip, ringPip, ringMcp);
+      const pinkyExt = isExt(pinkyTip, pinkyPip, pinkyMcp);
+
+      const isCurledOrFolded = (tip, dip, pip, mcp) => {
+        const fullCurl = dist(tip, wrist) <= dist(pip, wrist) * 1.05;
+        const foldedTable = dist(tip, mcp) < dist(pip, mcp) * 0.95 || dist(tip, wrist) < dist(pip, wrist);
+        return fullCurl || foldedTable;
+      };
+
+      const indexCurled = isCurledOrFolded(indexTip, indexDip, indexPip, indexMcp);
+      const middleCurled = isCurledOrFolded(middleTip, middleDip, middlePip, middleMcp);
+      const ringCurled = isCurledOrFolded(ringTip, ringDip, ringPip, ringMcp);
+      const pinkyCurled = isCurledOrFolded(pinkyTip, pinkyDip, pinkyPip, pinkyMcp);
+
+      // --- Metric 1: Palm Triangle Area & Ratio ---
+      const palmTriangleArea = 0.5 * Math.abs(
+        wrist.x * (indexMcp.y - pinkyMcp.y) +
+        indexMcp.x * (pinkyMcp.y - wrist.y) +
+        pinkyMcp.x * (wrist.y - indexMcp.y)
+      );
+      const handScale = dist(wrist, middleMcp);
+      const handAreaRef = handScale * handScale;
+      const palmAreaRatio = palmTriangleArea / (handAreaRef || 0.001);
+
+      // --- Metric 2: Fingers Rectangle Area & Ratio ---
+      const x1 = indexMcp.x, y1 = indexMcp.y;
+      const x2 = indexTip.x, y2 = indexTip.y;
+      const x3 = pinkyTip.x, y3 = pinkyTip.y;
+      const x4 = pinkyMcp.x, y4 = pinkyMcp.y;
+
+      const fingerRectArea = 0.5 * Math.abs(
+        (x1 * y2 - y1 * x2) +
+        (x2 * y3 - y2 * x3) +
+        (x3 * y4 - y3 * x4) +
+        (x4 * y1 - y4 * x1)
+      );
+      const fingerRectRatio = fingerRectArea / (handAreaRef || 0.001);
+
+      const avgTipY = (indexTip.y + middleTip.y + ringTip.y + pinkyTip.y) / 4;
+      const avgMcpY = (indexMcp.y + middleMcp.y + ringMcp.y + pinkyMcp.y) / 4;
+      const dy = avgTipY - avgMcpY;
+
+      let detectedSign = null;
+
+      // 1. Ti (or Si): Index pointing up
+      if (indexExt && middleCurled && ringCurled && pinkyCurled) {
+        detectedSign = "Ti";
+      }
+      // 2. Fist: Fa vs Do
+      else if (indexCurled && middleCurled && ringCurled && pinkyCurled) {
+        const thumbToIndexPipDist = dist(thumbTip, indexPip);
+        const indexProximalLength = dist(indexMcp, indexPip);
+        const thumbExtensionRatio = thumbToIndexPipDist / (indexProximalLength || 0.001);
+
+        detectedSign = (thumbExtensionRatio > 1.25) ? "Fa" : "Do";
+      }
+      // 3. Open Hand: Re, La, and Sol vs Mi
+      else {
+        const extendedCount = [indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length;
+        if (extendedCount >= 3) {
+          const isHorizontal = Math.abs(dy) < 0.10;
+
+          if (dy < -0.05 && dy > -0.19) {
+            detectedSign = "Re";
+          } else if (dy > 0.05) {
+            detectedSign = "La";
+          } else if (isHorizontal) {
+            if (activeClassifierMetric === 'triangle') {
+              detectedSign = (palmAreaRatio > thresholdTriangle) ? "Sol" : "Mi";
+            } else {
+              detectedSign = (fingerRectRatio > thresholdRectangle) ? "Sol" : "Mi";
+            }
+          }
+        }
+      }
+
+      return {
+        sign: detectedSign,
+        palmArea: palmTriangleArea,
+        palmRatio: palmAreaRatio,
+        rectArea: fingerRectArea,
+        rectRatio: fingerRectRatio
+      };
+    }
+
+    /* ==========================================================================
+       5. HYSTERESIS FILTERING (DEBOUNCE)
+       ========================================================================== */
+    class HandStateTracker {
+      constructor() {
+        this.history = [];
+        this.stableNote = null;
+        this.missedFrames = 0;
+      }
+
+      update(detectedSign, landmarks) {
+        this.missedFrames = 0;
+        if (!detectedSign) {
+          this.history.push(null);
+        } else {
+          const note = resolveProximityNote(detectedSign, landmarks);
+          this.history.push({ sign: detectedSign, note });
+        }
+
+        if (this.history.length > 5) this.history.shift();
+
+        const validFrames = this.history.filter(Boolean);
+        if (validFrames.length >= 3) {
+          const latestNote = validFrames[validFrames.length - 1].note;
+          const matchCount = validFrames.filter(f => f.note === latestNote).length;
+          if (matchCount >= 2) {
+            this.stableNote = latestNote;
+          }
+        }
+      }
+
+      registerMiss() {
+        this.missedFrames++;
+        if (this.missedFrames > 6) {
+          this.history = [];
+          this.stableNote = null;
+        }
+      }
+    }
+
+    const leftHandTracker = new HandStateTracker();
+    const rightHandTracker = new HandStateTracker();
+
+    /* ==========================================================================
+       6. RENDERING & DEBUG VERTICAL PITCH LADDER HUD
+       ========================================================================== */
+    const videoElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const noteLeft = document.getElementById('note-left');
+    const dotsLeft = document.getElementById('dots-left');
+    const noteRight = document.getElementById('note-right');
+    const dotsRight = document.getElementById('dots-right');
+
+    const debugLeftPalmArea = document.getElementById('debug-left-palm-area');
+    const debugLeftPalmRatio = document.getElementById('debug-left-palm-ratio');
+    const debugLeftPalmBar = document.getElementById('debug-left-palm-bar');
+    const debugLeftRectArea = document.getElementById('debug-left-rect-area');
+    const debugLeftRectRatio = document.getElementById('debug-left-rect-ratio');
+    const debugLeftRectBar = document.getElementById('debug-left-rect-bar');
+
+    const debugRightPalmArea = document.getElementById('debug-right-palm-area');
+    const debugRightPalmRatio = document.getElementById('debug-right-palm-ratio');
+    const debugRightPalmBar = document.getElementById('debug-right-palm-bar');
+    const debugRightRectArea = document.getElementById('debug-right-rect-area');
+    const debugRightRectRatio = document.getElementById('debug-right-rect-ratio');
+    const debugRightRectBar = document.getElementById('debug-right-rect-bar');
+
+    let lastHandsResults = null;
+    let viewRect = { x: 0, y: 0, w: 0, h: 0 };
+    let hasReceivedFirstFrame = false;
+
+    function calculateViewRect() {
+      const canvasW = canvasElement.width;
+      const canvasH = canvasElement.height;
+      const videoW = videoElement.videoWidth || 1280;
+      const videoH = videoElement.videoHeight || 720;
+
+      const videoAspect = videoW / videoH;
+      const canvasAspect = canvasW / canvasH;
+
+      let drawW, drawH, offsetX, offsetY;
+
+      if (canvasAspect > videoAspect) {
+        drawH = canvasH;
+        drawW = canvasH * videoAspect;
+        offsetX = (canvasW - drawW) / 2;
+        offsetY = 0;
+      } else {
+        drawW = canvasW;
+        drawH = canvasW / videoAspect;
+        offsetX = 0;
+        offsetY = (canvasH - drawH) / 2;
+      }
+
+      viewRect = { x: offsetX, y: offsetY, w: drawW, h: drawH };
+    }
+
+    const PITCH_COLORS = [
+      '#e11d48', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+      '#10b981', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+      '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'
+    ];
+
+    function drawDebugPitchLadders() {
+      if (!isDebugVisible || !showDebugScales) return;
+
+      const totalNotes = SCALE_PITCHES.length;
+      const slotHeight = viewRect.h / totalNotes;
+      const ladderWidth = 42;
+
+      const ladders = [
+        {
+          x: viewRect.x + viewRect.w - ladderWidth,
+          activeNote: leftHandTracker.stableNote,
+          activeColor: '#38bdf8',
+          sideLabel: 'L'
+        },
+        {
+          x: viewRect.x,
+          activeNote: rightHandTracker.stableNote,
+          activeColor: '#f43f5e',
+          sideLabel: 'R'
+        }
+      ];
+
+      ladders.forEach(ladder => {
+        canvasCtx.save();
+
+        for (let i = 0; i < totalNotes; i++) {
+          const pitch = SCALE_PITCHES[i];
+          const y = viewRect.y + i * slotHeight;
+          const isActive = (ladder.activeNote === pitch);
+
+          canvasCtx.fillStyle = isActive ? ladder.activeColor : 'rgba(15, 23, 42, 0.65)';
+          canvasCtx.fillRect(ladder.x, y, ladderWidth, slotHeight - 1.5);
+
+          canvasCtx.fillStyle = PITCH_COLORS[i];
+          canvasCtx.fillRect(ladder.x, y, 4, slotHeight - 1.5);
+
+          canvasCtx.save();
+          canvasCtx.translate(ladder.x + ladderWidth / 2, y + slotHeight / 2 + 3);
+          canvasCtx.scale(-1, 1);
+
+          canvasCtx.fillStyle = isActive ? '#ffffff' : '#cbd5e1';
+          canvasCtx.font = isActive ? 'bold 10px monospace' : '9px monospace';
+          canvasCtx.textAlign = 'center';
+          canvasCtx.fillText(formatNoteName(pitch), 0, 0);
+          canvasCtx.restore();
+        }
+
+        canvasCtx.restore();
+      });
+    }
+
+    function updateDebugHUD(side, palmArea, palmRatio, rectArea, rectRatio) {
+      const isLeft = (side === 'left');
+      const areaEl = isLeft ? debugLeftPalmArea : debugRightPalmArea;
+      const ratioEl = isLeft ? debugLeftPalmRatio : debugRightPalmRatio;
+      const barEl = isLeft ? debugLeftPalmBar : debugRightPalmBar;
+
+      const rectAreaEl = isLeft ? debugLeftRectArea : debugRightRectArea;
+      const rectRatioEl = isLeft ? debugLeftRectRatio : debugRightRectRatio;
+      const rectBarEl = isLeft ? debugLeftRectBar : debugRightRectBar;
+
+      areaEl.textContent = palmArea.toFixed(3);
+      ratioEl.textContent = palmRatio.toFixed(3);
+      const palmPct = Math.min(Math.max((palmRatio / MAX_SLIDER_RATIO) * 100, 0), 100);
+      barEl.style.width = `${palmPct}%`;
+
+      rectAreaEl.textContent = rectArea.toFixed(3);
+      rectRatioEl.textContent = rectRatio.toFixed(3);
+      const rectPct = Math.min(Math.max((rectRatio / MAX_SLIDER_RATIO) * 100, 0), 100);
+      rectBarEl.style.width = `${rectPct}%`;
+    }
+
+    function resetDebugHUD(side) {
+      updateDebugHUD(side, 0, 0, 0, 0);
+    }
+
+    function renderCompositeFrame() {
+      if (!hasReceivedFirstFrame && videoElement.readyState >= 2) {
+        hasReceivedFirstFrame = true;
+        stopLoadingAnimation();
+      }
+
+      if (canvasElement.width !== window.innerWidth || canvasElement.height !== window.innerHeight) {
+        canvasElement.width = window.innerWidth;
+        canvasElement.height = window.innerHeight;
+      }
+
+      calculateViewRect();
+
+      canvasCtx.save();
+      canvasCtx.fillStyle = '#06090e';
+      canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+      if (videoElement.readyState >= 2) {
+        canvasCtx.drawImage(videoElement, viewRect.x, viewRect.y, viewRect.w, viewRect.h);
+      }
+
+      drawDebugPitchLadders();
+
+      let userLeftDetected = false;
+      let userRightDetected = false;
+
+      if (lastHandsResults && lastHandsResults.multiHandLandmarks && lastHandsResults.multiHandedness) {
+        for (let i = 0; i < lastHandsResults.multiHandLandmarks.length; i++) {
+          const landmarks = lastHandsResults.multiHandLandmarks[i];
+          const handedness = lastHandsResults.multiHandedness[i];
+
+          const isUserLeft = (handedness.label === 'Right');
+          
+          const opacity = isDebugVisible ? 1.0 : normalMeshOpacity;
+          const jointFillOpacity = isDebugVisible ? 1.0 : Math.min(normalMeshOpacity + 0.05, 1.0);
+
+          const jointColor = isUserLeft 
+            ? `rgba(56, 189, 248, ${opacity.toFixed(2)})`
+            : `rgba(244, 63, 94, ${opacity.toFixed(2)})`;
+          
+          const boneColor = isUserLeft 
+            ? `rgba(56, 189, 248, ${opacity.toFixed(2)})`
+            : `rgba(244, 63, 94, ${opacity.toFixed(2)})`;
+
+          const mappedLandmarks = landmarks.map(pt => ({
+            x: (viewRect.x + pt.x * viewRect.w) / canvasElement.width,
+            y: (viewRect.y + pt.y * viewRect.h) / canvasElement.height,
+            z: pt.z
+          }));
+
+          drawConnectors(canvasCtx, mappedLandmarks, HAND_CONNECTIONS, { 
+            color: boneColor, 
+            lineWidth: isDebugVisible ? 3.5 : 2.0 
+          });
+          drawLandmarks(canvasCtx, mappedLandmarks, { 
+            color: jointColor, 
+            fillColor: isDebugVisible ? '#ffffff' : (isUserLeft ? `rgba(56,189,248,${jointFillOpacity.toFixed(2)})` : `rgba(244,63,94,${jointFillOpacity.toFixed(2)})`), 
+            lineWidth: isDebugVisible ? 1.5 : 1.0, 
+            radius: isDebugVisible ? 4.5 : 2.5 
+          });
+
+          const analysis = classifyKodalyGesture(landmarks);
+
+          if (isUserLeft) {
+            userLeftDetected = true;
+            leftHandTracker.update(analysis.sign, landmarks);
+            updateDebugHUD('left', analysis.palmArea, analysis.palmRatio, analysis.rectArea, analysis.rectRatio);
+          } else {
+            userRightDetected = true;
+            rightHandTracker.update(analysis.sign, landmarks);
+            updateDebugHUD('right', analysis.palmArea, analysis.palmRatio, analysis.rectArea, analysis.rectRatio);
+          }
+        }
+      }
+
+      if (!userLeftDetected) {
+        leftHandTracker.registerMiss();
+        resetDebugHUD('left');
+      }
+      if (!userRightDetected) {
+        rightHandTracker.registerMiss();
+        resetDebugHUD('right');
+      }
+
+      if (leftHandTracker.stableNote) {
+        synth.setNote('left', leftHandTracker.stableNote);
+        noteLeft.textContent = formatNoteName(leftHandTracker.stableNote);
+        noteLeft.classList.remove('hidden');
+        dotsLeft.classList.add('hidden');
+      } else {
+        synth.releaseVoice('left');
+        noteLeft.classList.add('hidden');
+        dotsLeft.classList.remove('hidden');
+      }
+
+      if (rightHandTracker.stableNote) {
+        synth.setNote('right', rightHandTracker.stableNote);
+        noteRight.textContent = formatNoteName(rightHandTracker.stableNote);
+        noteRight.classList.remove('hidden');
+        dotsRight.classList.add('hidden');
+      } else {
+        synth.releaseVoice('right');
+        noteRight.classList.add('hidden');
+        dotsRight.classList.remove('hidden');
+      }
+
+      canvasCtx.restore();
+    }
+
+    /* ==========================================================================
+       7. LOADING SCREEN (Vector Line-Art SVGs & Coprime Modulo 7 Cycle)
+       ========================================================================== */
+    const KODALY_HAND_SVGS = [
+      // 0: Do (Horizontal Fist)
+      `<path d="M14 62 C22 52 35 44 48 40 C60 36 74 38 80 43 C85 47 85 53 80 57 C75 61 68 62 60 62" />
+       <path d="M22 68 C30 63 42 61 54 61 C64 61 74 62 78 66 C80 69 78 73 72 75 C64 77 46 76 34 76" />
+       <path d="M60 44 C65 47 67 52 64 56 C61 59 55 60 48 59" />
+       <path d="M68 46 C74 49 76 54 73 58 C70 61 63 61 56 61" />
+       <path d="M54 53 C58 57 58 64 54 68 C50 71 44 71 40 68" />`,
+
+      // 1: Ré (Angled 45° Flat Hand Upward)
+      `<path d="M22 78 C25 68 34 56 46 42 L68 18 C72 14 77 15 79 19 C81 23 79 28 74 33 L52 58 L46 78" />
+       <path d="M50 38 L72 16 C76 12 80 13 82 17 C83 20 81 25 76 30 L60 50" />
+       <path d="M42 48 L64 26 C68 22 72 23 74 27 C75 30 73 34 68 39 L54 56" />
+       <path d="M36 58 L54 38 C58 34 62 35 64 39 C65 42 63 46 58 50 L48 62" />`,
+
+      // 2: Mi (Horizontal Level Flat Hand Facing Down)
+      `<path d="M16 58 C24 54 34 50 48 50 L84 50 C89 50 92 53 92 56 C92 59 89 62 84 62 L48 62 C38 62 28 66 20 72" />
+       <path d="M48 50 L86 52 C90 52 93 55 93 58 C93 61 90 63 86 64 L50 64" />
+       <path d="M52 54 L88 56 C91 56 93 58 93 60 C93 63 90 65 86 66 L54 66" />
+       <path d="M40 58 C46 63 52 65 60 65 L76 65" />`,
+
+      // 3: Fa (Fist with Thumb Pointing Downward)
+      `<path d="M22 46 C30 46 40 43 50 42 C60 41 70 42 74 46 C77 49 77 54 73 57 C68 60 60 61 52 61" />
+       <path d="M72 46 C76 49 76 54 72 58 C68 61 62 61 54 61" />
+       <path d="M71 56 C75 59 75 64 71 67 C66 70 58 70 50 69" />
+       <path d="M68 66 C71 69 71 73 67 76 C63 79 56 78 48 76" />
+       <path d="M44 44 C42 54 44 65 48 76 L50 86 C50 90 47 93 43 93 C39 93 36 89 36 84 L38 68 C35 62 28 58 20 54" />`,
+
+      // 4: Sol (Open Vertical Palm Facing User)
+      `<path d="M24 74 C26 62 30 54 36 48 L44 48 C48 48 50 51 50 55 L50 78" />
+       <path d="M44 48 L64 48 C69 48 72 51 72 55 L72 74" />
+       <path d="M44 54 L68 54 C73 54 76 57 76 61 L76 76" />
+       <path d="M44 60 L68 60 C73 60 76 63 76 67 L76 78" />
+       <path d="M44 66 L64 66 C68 66 71 69 71 72 L71 80" />
+       <path d="M36 78 C40 81 50 82 62 82 C72 82 80 78 84 72" />
+       <path d="M32 56 C28 58 24 64 26 70 C28 76 34 80 40 82" />`,
+
+      // 5: La (Curved Arched Hand Hanging Downward)
+      `<path d="M18 44 C26 40 38 40 52 42 C64 44 74 50 78 58 C82 66 84 76 82 84 C81 87 78 88 76 86 C74 84 75 78 74 72 C71 62 64 56 54 54 C44 52 32 54 22 58" />
+       <path d="M72 60 C76 68 77 78 75 85 C74 88 71 89 69 86 C68 83 70 76 68 70 C65 62 58 56 50 54" />
+       <path d="M64 62 C67 69 68 77 66 83 C65 86 62 86 60 83 C59 80 61 74 58 68" />
+       <path d="M48 48 C42 54 38 64 36 74" />`,
+
+      // 6: Si / Ti (Index Finger Pointing Upward)
+      `<path d="M32 78 C36 68 42 56 50 48 L62 20 C64 16 68 16 70 19 C72 22 71 27 68 32 L60 52" />
+       <path d="M58 50 C65 48 72 49 74 53 C76 56 74 60 68 62 L56 63" />
+       <path d="M56 61 C63 60 69 61 71 65 C73 68 70 72 64 73 L54 74" />
+       <path d="M52 72 C58 71 64 72 66 75 C67 78 64 81 58 82 L46 82" />
+       <path d="M42 56 C38 60 36 68 40 76" />
+       <path d="M28 80 C32 86 42 90 52 90" />`
+    ];
+    
+    let loadingInterval = null;
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingHandSvg = document.getElementById('loading-hand-svg');
+
+    // Modulo 7 sequence with coprime step (ensures all 7 appear evenly with no immediate repeats)
+    let moduloIndex = Math.floor(Math.random() * 7);
+    const COPRIME_STEP = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
+
+    function getNextModuloSign() {
+      moduloIndex = (moduloIndex + COPRIME_STEP) % 7;
+      return moduloIndex;
+    }
+
+    function renderSignSvg(signIdx) {
+      loadingHandSvg.innerHTML = KODALY_HAND_SVGS[signIdx];
+    }
+
+    function startLoadingAnimation() {
+      loadingOverlay.classList.remove('opacity-0');
+      renderSignSvg(moduloIndex);
+
+      const cycle = () => {
+        loadingHandSvg.style.opacity = '0';
+        loadingHandSvg.style.transform = 'scale(0.92)';
+
+        setTimeout(() => {
+          const nextIdx = getNextModuloSign();
+          renderSignSvg(nextIdx);
+          loadingHandSvg.style.opacity = '1';
+          loadingHandSvg.style.transform = 'scale(1)';
+        }, 200);
+      };
+
+      loadingInterval = setInterval(cycle, 1000); // 1.0s interval
+    }
+
+    function stopLoadingAnimation() {
+      if (loadingInterval) {
+        clearInterval(loadingInterval);
+        loadingInterval = null;
+      }
+      loadingOverlay.classList.add('opacity-0');
+      setTimeout(() => loadingOverlay.remove(), 550);
+    }
+
+    /* ==========================================================================
+       8. INITIALIZATION & CAMERA LOOP
+       ========================================================================== */
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.65,
+      minTrackingConfidence: 0.65
+    });
+    hands.onResults((results) => {
+      lastHandsResults = results;
+    });
+
+    const startOverlay = document.getElementById('start-overlay');
+    const startBtn = document.getElementById('start-btn');
+    let cameraInstance = null;
+
+    async function startApplication() {
+      synth.init();
+
+      startOverlay.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => startOverlay.remove(), 480);
+      startLoadingAnimation();
+
+      cameraInstance = new Camera(videoElement, {
+        onFrame: async () => {
+          await hands.send({ image: videoElement });
+          renderCompositeFrame();
+        },
+        width: 1280,
+        height: 720
+      });
+
+      await cameraInstance.start();
+    }
+
+    startBtn.addEventListener('click', () => {
+      startApplication().catch(err => console.error("Initialization error:", err));
+    });
+
+    window.addEventListener('resize', () => {
+      canvasElement.width = window.innerWidth;
+      canvasElement.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
