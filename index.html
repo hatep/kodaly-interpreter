@@ -274,11 +274,11 @@
         <span class="text-slate-500 text-[10px]">Real-time audio controls</span>
       </div>
 
-      <!-- Left Voice Volume (Default 15%) -->
+      <!-- Left Voice Volume (Default 40%) -->
       <div class="flex items-center gap-3">
         <span class="text-sky-400 w-24 shrink-0 font-medium">Vol Left (L):</span>
-        <input id="input-vol-left" type="range" min="0" max="1" step="0.01" value="0.15" class="w-full accent-sky-400 cursor-pointer">
-        <span id="lbl-vol-left" class="text-sky-300 font-bold w-10 text-right">15%</span>
+        <input id="input-vol-left" type="range" min="0" max="1" step="0.01" value="0.40" class="w-full accent-sky-400 cursor-pointer">
+        <span id="lbl-vol-left" class="text-sky-300 font-bold w-10 text-right">40%</span>
       </div>
 
       <!-- Right Voice Volume (Default 75%) -->
@@ -983,7 +983,7 @@
         this.ctx = null;
         this.voices = { left: null, right: null };
         this.masterGain = null;
-        this.volLeft = 0.15;  // 15% default
+        this.volLeft = 0.40;  // 40% default
         this.volRight = 0.75; // 75% default
         this.stereoPanRatio = 0.20; // 20% default
       }
