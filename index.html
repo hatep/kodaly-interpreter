@@ -184,7 +184,7 @@
           <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]"></span>
         </button>
 
-        <!-- Circular 12-Segment Ring Popover (Reduced to 2/3 scale: w-40 h-40) -->
+        <!-- Circular 12-Segment Ring Popover -->
         <div id="popover-root" class="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden z-50 select-none">
           <div class="relative w-40 h-40 sm:w-44 sm:h-44 rounded-full p-1 bg-black/75 backdrop-blur-xl border border-cyan-500/30 shadow-[0_0_30px_rgba(0,0,0,0.85),0_0_18px_rgba(56,189,248,0.25)] flex items-center justify-center">
             <svg id="root-dial-svg" class="w-full h-full" viewBox="-115 -115 230 230"></svg>
@@ -234,10 +234,9 @@
   <!-- Modular Debug Panel (Toggle with 'D') -->
   <footer id="debug-panel" class="relative z-20 w-full pb-3 px-4 flex flex-col items-start pointer-events-none hidden gap-2">
     
-    <!-- Top Debug Bar: Left Action Buttons (Pushed right to clear left scale) & Right 'Debug' Pill (Pushed left to clear right scale) -->
+    <!-- Top Debug Bar -->
     <div class="w-full flex items-center justify-between relative pointer-events-auto">
       
-      <!-- Left side: Debug Feature Buttons with clearance from left pitch scale (~60px) -->
       <div class="ml-14 sm:ml-16 flex items-center gap-1.5 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/10 shadow-lg text-[11px] font-mono-note">
         <button id="dbg-toggle-scales" class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition-all font-semibold" title="Toggle side pitch ladders">
           Scales: ON
@@ -253,42 +252,38 @@
         </button>
       </div>
 
-      <!-- Right Side: 'Debug' Status Label (Pushed inward from right edge to clear right pitch scale) -->
       <div class="mr-14 sm:mr-16 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono-note text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.25)] pointer-events-none">
         <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
         Debug
       </div>
     </div>
 
-    <!-- Mesh Opacity Slider Sub-Panel (Toggled via 'Mesh Opacity' button) -->
+    <!-- Mesh Opacity Slider Sub-Panel -->
     <div id="debug-mesh-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2 rounded-xl border border-white/10 flex items-center gap-3 text-xs font-mono-note pointer-events-auto max-w-sm w-full hidden">
       <span class="text-slate-300 whitespace-nowrap">Mesh Opacity:</span>
       <input id="input-mesh-opacity" type="range" min="0" max="1" step="0.02" value="0.30" class="w-full accent-sky-400 cursor-pointer">
       <span id="lbl-mesh-opacity" class="text-sky-300 font-bold w-10 text-right">30%</span>
     </div>
 
-    <!-- Volumes & Stereo Panning Sub-Panel (Toggled via 'Volumes' button) -->
+    <!-- Volumes & Stereo Panning Sub-Panel -->
     <div id="debug-volumes-panel" class="ml-14 sm:ml-16 glass-card px-4 py-3 rounded-xl border border-white/10 flex flex-col gap-2.5 text-xs font-mono-note pointer-events-auto max-w-md w-full hidden">
       <div class="flex items-center justify-between border-b border-white/10 pb-1 text-slate-300 text-[11px]">
         <span class="font-bold text-cyan-300">Audio Volumes & Stereo Mixing</span>
         <span class="text-slate-500 text-[10px]">Real-time audio controls</span>
       </div>
 
-      <!-- Left Voice Volume (Default 40%) -->
       <div class="flex items-center gap-3">
         <span class="text-sky-400 w-24 shrink-0 font-medium">Vol Left (L):</span>
         <input id="input-vol-left" type="range" min="0" max="1" step="0.01" value="0.40" class="w-full accent-sky-400 cursor-pointer">
         <span id="lbl-vol-left" class="text-sky-300 font-bold w-10 text-right">40%</span>
       </div>
 
-      <!-- Right Voice Volume (Default 75%) -->
       <div class="flex items-center gap-3">
         <span class="text-rose-400 w-24 shrink-0 font-medium">Vol Right (R):</span>
         <input id="input-vol-right" type="range" min="0" max="1" step="0.01" value="0.75" class="w-full accent-rose-400 cursor-pointer">
         <span id="lbl-vol-right" class="text-rose-300 font-bold w-10 text-right">75%</span>
       </div>
 
-      <!-- Stereo Separation / Panning Slider (Default 20%) -->
       <div class="flex items-center gap-3 pt-1 border-t border-white/5">
         <span class="text-amber-400 w-24 shrink-0 font-medium" title="0% = Mono mix in both ears; 100% = Hard isolated left/right ears">Panning:</span>
         <input id="input-stereo-pan" type="range" min="0" max="1" step="0.01" value="0.20" class="w-full accent-amber-400 cursor-pointer">
@@ -304,7 +299,6 @@
     <!-- Sol/Mi Classifier Metrics Sub-Panel -->
     <div id="debug-metric-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2.5 rounded-xl border border-white/10 flex flex-col gap-2.5 text-[11px] font-mono-note pointer-events-auto max-w-2xl w-full hidden">
       
-      <!-- Metric Mode Selector Switch -->
       <div class="flex items-center justify-between border-b border-white/10 pb-1.5 text-xs">
         <div class="flex items-center gap-2">
           <span class="text-slate-400">Sol/Mi Classifier Metric:</span>
@@ -324,9 +318,15 @@
         
         <!-- Left Hand Metrics -->
         <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-sky-500/20">
-          <div class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-            <span class="text-sky-300 font-bold uppercase tracking-wider text-[10px]">Left Hand Diagnostics</span>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span class="text-sky-300 font-bold uppercase tracking-wider text-[10px]">Left Hand Diagnostics</span>
+            </div>
+            <div class="text-[10px] text-slate-400">
+              Angle: <span id="debug-left-angle" class="text-sky-300 font-bold">0.0°</span>
+              <span id="debug-left-angle-zone" class="text-[9px] text-slate-500 ml-1">(-)</span>
+            </div>
           </div>
 
           <!-- Palm Triangle Metric -->
@@ -335,7 +335,6 @@
               <span>Palm △ <span class="text-sky-300 font-bold">Ratio: <span id="debug-left-palm-ratio">0.000</span></span></span>
               <span>Abs: <span id="debug-left-palm-area" class="text-slate-200">0.000</span></span>
             </div>
-            <!-- Slider Track for Triangle (Interactive) -->
             <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
               <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
                 <div id="debug-left-palm-bar" class="meter-bar h-full bg-sky-400 w-0"></div>
@@ -351,13 +350,11 @@
             </div>
           </div>
 
-          <!-- Fingers Rectangle Metric -->
           <div class="flex flex-col gap-0.5 mt-0.5">
             <div class="flex justify-between text-[10px] text-slate-400">
               <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-left-rect-ratio">0.000</span></span></span>
               <span>Abs: <span id="debug-left-rect-area" class="text-slate-200">0.000</span></span>
             </div>
-            <!-- Slider Track for Rectangle (Interactive) -->
             <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
               <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
                 <div id="debug-left-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
@@ -376,9 +373,15 @@
 
         <!-- Right Hand Metrics -->
         <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-rose-500/20">
-          <div class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
-            <span class="text-rose-300 font-bold uppercase tracking-wider text-[10px]">Right Hand Diagnostics</span>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+              <span class="text-rose-300 font-bold uppercase tracking-wider text-[10px]">Right Hand Diagnostics</span>
+            </div>
+            <div class="text-[10px] text-slate-400">
+              Angle: <span id="debug-right-angle" class="text-rose-300 font-bold">0.0°</span>
+              <span id="debug-right-angle-zone" class="text-[9px] text-slate-500 ml-1">(-)</span>
+            </div>
           </div>
 
           <!-- Palm Triangle Metric -->
@@ -387,7 +390,6 @@
               <span>Palm △ <span class="text-rose-300 font-bold">Ratio: <span id="debug-right-palm-ratio">0.000</span></span></span>
               <span>Abs: <span id="debug-right-palm-area" class="text-slate-200">0.000</span></span>
             </div>
-            <!-- Slider Track for Triangle (Interactive) -->
             <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
               <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
                 <div id="debug-right-palm-bar" class="meter-bar h-full bg-rose-400 w-0"></div>
@@ -403,13 +405,11 @@
             </div>
           </div>
 
-          <!-- Fingers Rectangle Metric -->
           <div class="flex flex-col gap-0.5 mt-0.5">
             <div class="flex justify-between text-[10px] text-slate-400">
               <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-right-rect-ratio">0.000</span></span></span>
               <span>Abs: <span id="debug-right-rect-area" class="text-slate-200">0.000</span></span>
             </div>
-            <!-- Slider Track for Rectangle (Interactive) -->
             <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
               <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
                 <div id="debug-right-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
@@ -448,7 +448,7 @@
     </div>
   </div>
 
-  <!-- Animated Loading Overlay (Textless Vector Kodály Hand Signs via Modulo 7) -->
+  <!-- Animated Loading Overlay -->
   <div id="loading-overlay" class="absolute inset-0 z-40 bg-[#06090e]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center pointer-events-none opacity-0 transition-opacity duration-500">
     <div class="flex flex-col items-center">
       <div class="w-48 h-48 relative flex items-center justify-center mb-2">
@@ -687,7 +687,6 @@
       }
     });
 
-    // Dual Range Slider Pointer Drag Logic
     function setupDualRangeSlider() {
       const totalSteps = ALL_DIATONIC_PITCHES.length - 1;
       const track = document.getElementById('range-track-bg');
@@ -770,7 +769,6 @@
       btnMetricTriangle.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all';
     });
 
-    // Debug Sub-Buttons: Scales, Metric, Mesh Opacity Slider, Volumes
     const dbgToggleScales = document.getElementById('dbg-toggle-scales');
     const dbgToggleMetric = document.getElementById('dbg-toggle-metric');
     const dbgToggleMeshSlider = document.getElementById('dbg-toggle-mesh-slider');
@@ -790,7 +788,6 @@
     const inputStereoPan = document.getElementById('input-stereo-pan');
     const lblStereoPan = document.getElementById('lbl-stereo-pan');
 
-    // Volumes & Mixing Controls
     inputVolLeft.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
       lblVolLeft.textContent = `${Math.round(val * 100)}%`;
@@ -946,7 +943,7 @@
     });
 
     /* ==========================================================================
-       2. DYNAMIC FULL-HEIGHT OCTAVE RESOLVER (Dynamic Scale Proximity)
+       2. DYNAMIC FULL-HEIGHT OCTAVE RESOLVER
        ========================================================================== */
     function resolveProximityNote(sign, landmarks) {
       if (!sign || !landmarks || landmarks.length === 0 || SCALE_PITCHES.length === 0) return null;
@@ -976,16 +973,16 @@
     }
 
     /* ==========================================================================
-       3. AUDIO SYNTHESIS ENGINE (Volumes, Stereo Panning & Transposition)
+       3. AUDIO SYNTHESIS ENGINE
        ========================================================================== */
     class HarmoniousDualSynth {
       constructor() {
         this.ctx = null;
         this.voices = { left: null, right: null };
         this.masterGain = null;
-        this.volLeft = 0.40;  // 40% default
-        this.volRight = 0.75; // 75% default
-        this.stereoPanRatio = 0.20; // 20% default
+        this.volLeft = 0.40;
+        this.volRight = 0.75;
+        this.stereoPanRatio = 0.20;
       }
 
       init() {
@@ -996,7 +993,6 @@
         this.masterGain.gain.setValueAtTime(0.75, this.ctx.currentTime);
         this.masterGain.connect(this.ctx.destination);
 
-        // Right Hand Channel: Smooth Sine/Tri + Stereo Panner
         const rightFilter = this.ctx.createBiquadFilter();
         rightFilter.type = 'lowpass';
         rightFilter.frequency.setValueAtTime(950, this.ctx.currentTime);
@@ -1012,7 +1008,6 @@
         }
         this.voices.right = this.createVoice(rightFilter, 'sine', 'triangle', false, rightPan);
 
-        // Left Hand Channel: Raspy Saw/Square + Stereo Panner
         const leftFilter = this.ctx.createBiquadFilter();
         leftFilter.type = 'lowpass';
         leftFilter.frequency.setValueAtTime(1400, this.ctx.currentTime);
@@ -1126,7 +1121,7 @@
     const synth = new HarmoniousDualSynth();
 
     /* ==========================================================================
-       4. GESTURE RECOGNITION (Geometry + Tunable Thresholds)
+       4. GESTURE RECOGNITION
        ========================================================================== */
     function classifyKodalyGesture(landmarks) {
       const dist = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -1155,7 +1150,6 @@
       const ringCurled = isCurledOrFolded(ringTip, ringDip, ringPip, ringMcp);
       const pinkyCurled = isCurledOrFolded(pinkyTip, pinkyDip, pinkyPip, pinkyMcp);
 
-      // --- Metric 1: Palm Triangle Area & Ratio ---
       const palmTriangleArea = 0.5 * Math.abs(
         wrist.x * (indexMcp.y - pinkyMcp.y) +
         indexMcp.x * (pinkyMcp.y - wrist.y) +
@@ -1165,7 +1159,6 @@
       const handAreaRef = handScale * handScale;
       const palmAreaRatio = palmTriangleArea / (handAreaRef || 0.001);
 
-      // --- Metric 2: Fingers Rectangle Area & Ratio ---
       const x1 = indexMcp.x, y1 = indexMcp.y;
       const x2 = indexTip.x, y2 = indexTip.y;
       const x3 = pinkyTip.x, y3 = pinkyTip.y;
@@ -1179,9 +1172,16 @@
       );
       const fingerRectRatio = fingerRectArea / (handAreaRef || 0.001);
 
+      const avgTipX = (indexTip.x + middleTip.x + ringTip.x + pinkyTip.x) / 4;
       const avgTipY = (indexTip.y + middleTip.y + ringTip.y + pinkyTip.y) / 4;
+      const avgMcpX = (indexMcp.x + middleMcp.x + ringMcp.x + pinkyMcp.x) / 4;
       const avgMcpY = (indexMcp.y + middleMcp.y + ringMcp.y + pinkyMcp.y) / 4;
+
+      const dx = avgTipX - avgMcpX;
       const dy = avgTipY - avgMcpY;
+
+      // Scale-invariant hand pitch angle in degrees relative to horizontal
+      const pitchAngleDeg = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
 
       let detectedSign = null;
 
@@ -1197,17 +1197,15 @@
 
         detectedSign = (thumbExtensionRatio > 1.25) ? "Fa" : "Do";
       }
-      // 3. Open Hand: Re, La, and Sol vs Mi
+      // 3. Open Hand: Re, La, and Sol vs Mi (using scale-invariant pitch angle)
       else {
         const extendedCount = [indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length;
         if (extendedCount >= 3) {
-          const isHorizontal = Math.abs(dy) < 0.10;
-
-          if (dy < -0.05 && dy > -0.19) {
+          if (pitchAngleDeg >= 18 && pitchAngleDeg <= 58) {
             detectedSign = "Re";
-          } else if (dy > 0.05) {
+          } else if (pitchAngleDeg <= -18 && pitchAngleDeg >= -58) {
             detectedSign = "La";
-          } else if (isHorizontal) {
+          } else if (Math.abs(pitchAngleDeg) < 16) {
             if (activeClassifierMetric === 'triangle') {
               detectedSign = (palmAreaRatio > thresholdTriangle) ? "Sol" : "Mi";
             } else {
@@ -1219,6 +1217,7 @@
 
       return {
         sign: detectedSign,
+        pitchAngle: pitchAngleDeg,
         palmArea: palmTriangleArea,
         palmRatio: palmAreaRatio,
         rectArea: fingerRectArea,
@@ -1286,6 +1285,8 @@
     const debugLeftRectArea = document.getElementById('debug-left-rect-area');
     const debugLeftRectRatio = document.getElementById('debug-left-rect-ratio');
     const debugLeftRectBar = document.getElementById('debug-left-rect-bar');
+    const debugLeftAngle = document.getElementById('debug-left-angle');
+    const debugLeftAngleZone = document.getElementById('debug-left-angle-zone');
 
     const debugRightPalmArea = document.getElementById('debug-right-palm-area');
     const debugRightPalmRatio = document.getElementById('debug-right-palm-ratio');
@@ -1293,6 +1294,8 @@
     const debugRightRectArea = document.getElementById('debug-right-rect-area');
     const debugRightRectRatio = document.getElementById('debug-right-rect-ratio');
     const debugRightRectBar = document.getElementById('debug-right-rect-bar');
+    const debugRightAngle = document.getElementById('debug-right-angle');
+    const debugRightAngleZone = document.getElementById('debug-right-angle-zone');
 
     let lastHandsResults = null;
     let viewRect = { x: 0, y: 0, w: 0, h: 0 };
@@ -1381,7 +1384,7 @@
       });
     }
 
-    function updateDebugHUD(side, palmArea, palmRatio, rectArea, rectRatio) {
+    function updateDebugHUD(side, palmArea, palmRatio, rectArea, rectRatio, pitchAngle = 0) {
       const isLeft = (side === 'left');
       const areaEl = isLeft ? debugLeftPalmArea : debugRightPalmArea;
       const ratioEl = isLeft ? debugLeftPalmRatio : debugRightPalmRatio;
@@ -1390,6 +1393,9 @@
       const rectAreaEl = isLeft ? debugLeftRectArea : debugRightRectArea;
       const rectRatioEl = isLeft ? debugLeftRectRatio : debugRightRectRatio;
       const rectBarEl = isLeft ? debugLeftRectBar : debugRightRectBar;
+
+      const angleEl = isLeft ? debugLeftAngle : debugRightAngle;
+      const zoneEl = isLeft ? debugLeftAngleZone : debugRightAngleZone;
 
       areaEl.textContent = palmArea.toFixed(3);
       ratioEl.textContent = palmRatio.toFixed(3);
@@ -1400,10 +1406,33 @@
       rectRatioEl.textContent = rectRatio.toFixed(3);
       const rectPct = Math.min(Math.max((rectRatio / MAX_SLIDER_RATIO) * 100, 0), 100);
       rectBarEl.style.width = `${rectPct}%`;
+
+      angleEl.textContent = `${pitchAngle >= 0 ? '+' : ''}${pitchAngle.toFixed(1)}°`;
+
+      if (pitchAngle >= 18 && pitchAngle <= 58) {
+        zoneEl.textContent = "(Ré: +18°..+58°)";
+        zoneEl.className = "text-[9px] text-amber-300 font-bold ml-1";
+      } else if (pitchAngle <= -18 && pitchAngle >= -58) {
+        zoneEl.textContent = "(La: -58°..-18°)";
+        zoneEl.className = "text-[9px] text-indigo-300 font-bold ml-1";
+      } else if (Math.abs(pitchAngle) < 16) {
+        zoneEl.textContent = "(Sol/Mi: ±16°)";
+        zoneEl.className = "text-[9px] text-emerald-300 font-bold ml-1";
+      } else {
+        zoneEl.textContent = "(Transition)";
+        zoneEl.className = "text-[9px] text-slate-500 ml-1";
+      }
     }
 
     function resetDebugHUD(side) {
-      updateDebugHUD(side, 0, 0, 0, 0);
+      const isLeft = (side === 'left');
+      const angleEl = isLeft ? debugLeftAngle : debugRightAngle;
+      const zoneEl = isLeft ? debugLeftAngleZone : debugRightAngleZone;
+
+      updateDebugHUD(side, 0, 0, 0, 0, 0);
+      angleEl.textContent = "—";
+      zoneEl.textContent = "(-)";
+      zoneEl.className = "text-[9px] text-slate-500 ml-1";
     }
 
     function renderCompositeFrame() {
@@ -1472,11 +1501,11 @@
           if (isUserLeft) {
             userLeftDetected = true;
             leftHandTracker.update(analysis.sign, landmarks);
-            updateDebugHUD('left', analysis.palmArea, analysis.palmRatio, analysis.rectArea, analysis.rectRatio);
+            updateDebugHUD('left', analysis.palmArea, analysis.palmRatio, analysis.rectArea, analysis.rectRatio, analysis.pitchAngle);
           } else {
             userRightDetected = true;
             rightHandTracker.update(analysis.sign, landmarks);
-            updateDebugHUD('right', analysis.palmArea, analysis.palmRatio, analysis.rectArea, analysis.rectRatio);
+            updateDebugHUD('right', analysis.palmArea, analysis.palmRatio, analysis.rectArea, analysis.rectRatio, analysis.pitchAngle);
           }
         }
       }
@@ -1516,22 +1545,15 @@
     }
 
     /* ==========================================================================
-       7. LOADING SCREEN (Vector Kodály Hand Signs via Modulo 7)
+       7. LOADING SCREEN
        ========================================================================== */
     const KODALY_SIGNS_SVG = [
-      // 0: Do (Clean fist)
       '<path d="M42 74 C34 74 24 64 22 55 C20 48 24 40 32 40 C36 40 40 43 42 46 C45 42 50 42 53 45 C56 42 61 42 64 46 C67 43 72 45 74 49 C76 54 75 62 70 68 C64 74 52 74 42 74 Z" /><path d="M35 52 C35 60 42 65 52 64" /><path d="M22 55 L16 68" />',
-      // 1: Ré (Upward angled palm)
       '<path d="M30 78 L24 64 L52 30 C55 26 62 26 66 30 C70 34 68 40 64 44 L44 68 L40 78 Z" /><path d="M38 58 L62 36" /><path d="M42 64 L68 42" /><path d="M48 68 L72 48" />',
-      // 2: Mi (Flat horizontal shelf)
       '<path d="M20 62 C20 54 26 48 35 48 L76 48 C82 48 86 52 86 58 C86 64 80 66 74 66 L38 66 C28 66 22 68 20 74 Z" /><path d="M38 54 L78 54" /><path d="M38 60 L78 60" />',
-      // 3: Fa (Fist with thumb pointing downwards)
       '<path d="M46 38 C56 38 68 44 68 56 C68 66 58 72 48 72 L36 72 C30 72 26 68 26 60 C26 50 36 38 46 38 Z" /><path d="M36 50 L28 60 L24 78 C23 82 18 82 16 78 C14 74 16 66 22 58 L32 46" /><path d="M44 46 L62 48" /><path d="M44 54 L62 56" />',
-      // 4: Sol (Open vertical palm facing inward)
       '<path d="M26 74 L26 48 C26 42 30 38 36 38 L68 38 C74 38 78 42 78 48 L78 74 Z" /><path d="M36 38 L36 74" /><path d="M46 38 L46 74" /><path d="M56 38 L56 74" /><path d="M66 38 L66 74" /><path d="M26 60 L78 60" />',
-      // 5: La (Downward arched relaxed cup)
       '<path d="M24 76 C24 58 32 40 48 40 C64 40 76 52 76 66 C76 72 72 78 66 78 C60 78 58 72 58 66 C58 56 50 50 44 50 C36 50 32 58 32 76 Z" /><path d="M48 48 C52 56 56 66 56 76" /><path d="M64 54 C68 62 70 70 70 76" />',
-      // 6: Si / Ti (Index finger pointing straight up)
       '<path d="M36 76 L36 56 C36 50 40 46 45 46 L45 22 C45 17 51 17 52 22 L52 46 C57 46 62 50 62 56 L62 76 Z" /><path d="M36 58 L28 54 C25 52 25 48 28 46 C32 44 36 47 40 52 L45 56" /><path d="M52 56 L62 56" /><path d="M52 64 L62 64" />'
     ];
 
