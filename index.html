@@ -1,0 +1,323 @@
+<!-- Top Left: 3 Flags Selector + Range Pill + Tonic / Transposition Pill -->
+<div class="flex items-center gap-2 pointer-events-auto flex-wrap">
+  
+  <!-- Flag Selector Container -->
+  <div class="flex items-center gap-2 bg-black/40 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/10 shadow-lg">
+    <!-- 1. French Flag (Default Active: Fixed-Do Si) -->
+    <button id="flag-fr" class="flag-btn opacity-100 ring-2 ring-sky-400/90 rounded overflow-hidden p-0.5" title="Français (Do, Ré, Mi, Fa, Sol, La, Si)">
+      <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 3 2">
+        <rect width="1" height="2" x="0" fill="#002395"/>
+        <rect width="1" height="2" x="1" fill="#fff"/>
+        <rect width="1" height="2" x="2" fill="#ED2939"/>
+      </svg>
+    </button>
+
+    <!-- 2. Hungarian Flag (Kodály Solfège: So & Ti) -->
+    <button id="flag-hu" class="flag-btn opacity-30 hover:opacity-85 rounded overflow-hidden p-0.5" title="Magyar / Kodály (Do, Re, Mi, Fa, So, La, Ti)">
+      <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 6 3">
+        <rect width="6" height="1" y="0" fill="#CE2939"/>
+        <rect width="6" height="1" y="1" fill="#FFFFFF"/>
+        <rect width="6" height="1" y="2" fill="#477050"/>
+      </svg>
+    </button>
+
+    <!-- 3. UK Flag (Alphabetical: C, D, E, F, G, A, B) -->
+    <button id="flag-en" class="flag-btn opacity-30 hover:opacity-85 rounded overflow-hidden p-0.5" title="Alphabetical Letters (C, D, E, F, G, A, B)">
+      <svg class="w-6 h-4 sm:w-7 sm:h-4.5 rounded-sm block" viewBox="0 0 60 30">
+        <clipPath id="s"><path d="M0,0 v30 h60 v-30 z"/></clipPath>
+        <clipPath id="t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath>
+        <g clip-path="url(#s)">
+          <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+          <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+          <path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#t)" stroke="#C8102E" stroke-width="4"/>
+          <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
+          <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Pitch Range Pill (↕ Sol₂ – Sol₄) -->
+  <div class="relative">
+    <button id="btn-range-pill" class="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 shadow-lg text-xs font-mono-note text-slate-200 transition-all cursor-pointer">
+      <span class="text-sky-400 font-bold">↕</span>
+      <span id="lbl-range-pill">Sol₂ – Sol₄</span>
+    </button>
+
+    <!-- Range Dual-Slider Popover -->
+    <div id="popover-range" class="glass-card absolute top-full left-0 mt-2 p-3.5 rounded-xl border border-white/15 shadow-2xl flex flex-col gap-2.5 w-72 sm:w-80 hidden z-50">
+      <div class="flex justify-between items-center text-[11px] font-mono-note text-slate-400 border-b border-white/10 pb-1.5">
+        <span>Range: <strong id="lbl-range-current" class="text-sky-300">Sol₂ – Sol₄</strong></span>
+        <span class="text-[10px] text-slate-500">(Drag min & max)</span>
+      </div>
+
+      <!-- Dual Slider Track Container -->
+      <div class="relative w-full h-8 flex items-center select-none pt-2">
+        <div id="range-track-bg" class="w-full h-2 bg-slate-800 rounded-full relative overflow-hidden border border-white/10">
+          <div id="range-highlight-bar" class="absolute top-0 bottom-0 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full"></div>
+        </div>
+        <!-- Min Slider Thumb -->
+        <div id="handle-range-min" class="absolute w-5 h-5 -ml-2.5 bg-sky-400 rounded-full border-2 border-white shadow-[0_0_10px_rgba(56,189,248,0.8)] cursor-ew-resize flex items-center justify-center top-3.5 z-30">
+          <div class="w-1.5 h-1.5 bg-black/60 rounded-full"></div>
+        </div>
+        <!-- Max Slider Thumb -->
+        <div id="handle-range-max" class="absolute w-5 h-5 -ml-2.5 bg-indigo-400 rounded-full border-2 border-white shadow-[0_0_10px_rgba(129,140,248,0.8)] cursor-ew-resize flex items-center justify-center top-3.5 z-30">
+          <div class="w-1.5 h-1.5 bg-black/60 rounded-full"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-between text-[10px] font-mono-note text-slate-400 pt-1">
+        <span id="lbl-range-min-disp">Min: Sol₂</span>
+        <span id="lbl-range-max-disp">Max: Sol₄</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Root Note / Tonic Transposition: Textless Tuning Fork Pill -->
+  <div class="relative">
+    <button id="btn-root-pill" class="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/10 shadow-lg text-xs font-mono-note text-slate-200 transition-all cursor-pointer" title="Transposition / Root Note">
+      <!-- Tuning Fork SVG -->
+      <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 3v7a5 5 0 0 0 10 0V3" />
+        <path d="M12 15v6" />
+      </svg>
+      <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]"></span>
+    </button>
+
+    <!-- Circular 12-Segment Ring Popover (Reduced to 2/3 scale: w-40 h-40) -->
+    <div id="popover-root" class="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden z-50 select-none">
+      <div class="relative w-40 h-40 sm:w-44 sm:h-44 rounded-full p-1 bg-black/75 backdrop-blur-xl border border-cyan-500/30 shadow-[0_0_30px_rgba(0,0,0,0.85),0_0_18px_rgba(56,189,248,0.25)] flex items-center justify-center">
+        <svg id="root-dial-svg" class="w-full h-full" viewBox="-115 -115 230 230"></svg>
+        <!-- Center Hub -->
+        <div class="absolute w-10 h-10 rounded-full bg-slate-950/95 border border-cyan-400/40 flex flex-col items-center justify-center pointer-events-none shadow-[0_0_10px_rgba(56,189,248,0.3)]">
+          <span id="lbl-root-hub" class="font-mono-note text-[11px] sm:text-xs font-bold text-cyan-300">C</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Center: High Contrast Title -->
+<h1 class="font-brand text-sm sm:text-lg md:text-xl font-bold uppercase tracking-widest text-slate-100 title-shadow text-center pr-2">
+  Kodály Interpreter
+</h1>
+
+<div class="w-20 hidden sm:block"></div>
+
+
+<!-- Left Hand HUD (Screen Left) -->
+<div id="hud-left" class="flex flex-col items-center justify-center min-w-[7rem] sm:min-w-[9rem]">
+  <div id="note-left" class="font-mono-note text-4xl sm:text-6xl md:text-7xl font-extrabold note-text-left hidden">
+    —
+  </div>
+  <div id="dots-left" class="text-2xl sm:text-3xl font-mono-note text-sky-400/35 suspension-dots">
+    ...
+  </div>
+</div>
+
+<!-- Right Hand HUD (Screen Right) -->
+<div id="hud-right" class="flex flex-col items-center justify-center min-w-[7rem] sm:min-w-[9rem]">
+  <div id="note-right" class="font-mono-note text-4xl sm:text-6xl md:text-7xl font-extrabold note-text-right hidden">
+    —
+  </div>
+  <div id="dots-right" class="text-2xl sm:text-3xl font-mono-note text-rose-400/35 suspension-dots">
+    ...
+  </div>
+</div>
+
+
+<!-- Top Debug Bar: Left Action Buttons (Pushed right to clear left scale) & Right 'Debug' Pill (Pushed left to clear right scale) -->
+<div class="w-full flex items-center justify-between relative pointer-events-auto">
+  
+  <!-- Left side: Debug Feature Buttons with clearance from left pitch scale (~60px) -->
+  <div class="ml-14 sm:ml-16 flex items-center gap-1.5 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/10 shadow-lg text-[11px] font-mono-note">
+    <button id="dbg-toggle-scales" class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition-all font-semibold" title="Toggle side pitch ladders">
+      Scales: ON
+    </button>
+    <button id="dbg-toggle-metric" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Toggle Sol/Mi classifier telemetry panel">
+      Sol/Mi Metric: OFF
+    </button>
+    <button id="dbg-toggle-mesh-slider" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Show normal mode mesh opacity slider">
+      Mesh Opacity
+    </button>
+    <button id="dbg-toggle-volumes" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700 transition-all font-semibold" title="Show Volumes & Stereo Panning panel">
+      Volumes
+    </button>
+  </div>
+
+  <!-- Right Side: 'Debug' Status Label (Pushed inward from right edge to clear right pitch scale) -->
+  <div class="mr-14 sm:mr-16 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono-note text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.25)] pointer-events-none">
+    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+    Debug
+  </div>
+</div>
+
+<!-- Mesh Opacity Slider Sub-Panel (Toggled via 'Mesh Opacity' button) -->
+<div id="debug-mesh-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2 rounded-xl border border-white/10 flex items-center gap-3 text-xs font-mono-note pointer-events-auto max-w-sm w-full hidden">
+  <span class="text-slate-300 whitespace-nowrap">Mesh Opacity:</span>
+  <input id="input-mesh-opacity" type="range" min="0" max="1" step="0.02" value="0.30" class="w-full accent-sky-400 cursor-pointer">
+  <span id="lbl-mesh-opacity" class="text-sky-300 font-bold w-10 text-right">30%</span>
+</div>
+
+<!-- Volumes & Stereo Panning Sub-Panel (Toggled via 'Volumes' button) -->
+<div id="debug-volumes-panel" class="ml-14 sm:ml-16 glass-card px-4 py-3 rounded-xl border border-white/10 flex flex-col gap-2.5 text-xs font-mono-note pointer-events-auto max-w-md w-full hidden">
+  <div class="flex items-center justify-between border-b border-white/10 pb-1 text-slate-300 text-[11px]">
+    <span class="font-bold text-cyan-300">Audio Volumes & Stereo Mixing</span>
+    <span class="text-slate-500 text-[10px]">Real-time audio controls</span>
+  </div>
+
+  <!-- Left Voice Volume (Default 50%) -->
+  <div class="flex items-center gap-3">
+    <span class="text-sky-400 w-24 shrink-0 font-medium">Vol Left (L):</span>
+    <input id="input-vol-left" type="range" min="0" max="1" step="0.01" value="0.50" class="w-full accent-sky-400 cursor-pointer">
+    <span id="lbl-vol-left" class="text-sky-300 font-bold w-10 text-right">50%</span>
+  </div>
+
+  <!-- Right Voice Volume (Default 75%) -->
+  <div class="flex items-center gap-3">
+    <span class="text-rose-400 w-24 shrink-0 font-medium">Vol Right (R):</span>
+    <input id="input-vol-right" type="range" min="0" max="1" step="0.01" value="0.75" class="w-full accent-rose-400 cursor-pointer">
+    <span id="lbl-vol-right" class="text-rose-300 font-bold w-10 text-right">75%</span>
+  </div>
+
+  <!-- Stereo Separation / Panning Slider (Default 20%) -->
+  <div class="flex items-center gap-3 pt-1 border-t border-white/5">
+    <span class="text-amber-400 w-24 shrink-0 font-medium" title="0% = Mono mix in both ears; 100% = Hard isolated left/right ears">Panning:</span>
+    <input id="input-stereo-pan" type="range" min="0" max="1" step="0.01" value="0.20" class="w-full accent-amber-400 cursor-pointer">
+    <span id="lbl-stereo-pan" class="text-amber-300 font-bold w-10 text-right">20%</span>
+  </div>
+  <div class="flex justify-between text-[9px] text-slate-500 px-1 -mt-1.5">
+    <span>0% (Mono mix)</span>
+    <span>50% (Wide)</span>
+    <span>100% (Hard L/R)</span>
+  </div>
+</div>
+
+<!-- Sol/Mi Classifier Metrics Sub-Panel -->
+<div id="debug-metric-panel" class="ml-14 sm:ml-16 glass-card px-4 py-2.5 rounded-xl border border-white/10 flex flex-col gap-2.5 text-[11px] font-mono-note pointer-events-auto max-w-2xl w-full hidden">
+  
+  <!-- Metric Mode Selector Switch -->
+  <div class="flex items-center justify-between border-b border-white/10 pb-1.5 text-xs">
+    <div class="flex items-center gap-2">
+      <span class="text-slate-400">Sol/Mi Classifier Metric:</span>
+      <span class="text-[10px] text-slate-500">(Drag markers to adjust thresholds · Scale: 0.0 - 0.8)</span>
+    </div>
+    <div class="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-white/10">
+      <button id="btn-metric-triangle" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">
+        Palm Triangle (△)
+      </button>
+      <button id="btn-metric-rectangle" class="px-2.5 py-1 rounded bg-emerald-500 text-white font-semibold shadow transition-all">
+        Fingers Rectangle (▭)
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+    
+    <!-- Left Hand Metrics -->
+    <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-sky-500/20">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+        <span class="text-sky-300 font-bold uppercase tracking-wider text-[10px]">Left Hand Diagnostics</span>
+      </div>
+
+      <!-- Palm Triangle Metric -->
+      <div class="flex flex-col gap-0.5">
+        <div class="flex justify-between text-[10px] text-slate-400">
+          <span>Palm △ <span class="text-sky-300 font-bold">Ratio: <span id="debug-left-palm-ratio">0.000</span></span></span>
+          <span>Abs: <span id="debug-left-palm-area" class="text-slate-200">0.000</span></span>
+        </div>
+        <!-- Slider Track for Triangle (Interactive) -->
+        <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+            <div id="debug-left-palm-bar" class="meter-bar h-full bg-sky-400 w-0"></div>
+          </div>
+          <div class="threshold-marker-triangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Palm Triangle threshold">
+            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+          </div>
+        </div>
+        <div class="flex justify-between text-[9px] text-slate-500">
+          <span>0.0</span>
+          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-triangle-thresh">0.26</span></span>
+          <span>0.8</span>
+        </div>
+      </div>
+
+      <!-- Fingers Rectangle Metric -->
+      <div class="flex flex-col gap-0.5 mt-0.5">
+        <div class="flex justify-between text-[10px] text-slate-400">
+          <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-left-rect-ratio">0.000</span></span></span>
+          <span>Abs: <span id="debug-left-rect-area" class="text-slate-200">0.000</span></span>
+        </div>
+        <!-- Slider Track for Rectangle (Interactive) -->
+        <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+            <div id="debug-left-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
+          </div>
+          <div class="threshold-marker-rectangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Fingers Rectangle threshold">
+            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+          </div>
+        </div>
+        <div class="flex justify-between text-[9px] text-slate-500">
+          <span>0.0</span>
+          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-rectangle-thresh">0.34</span></span>
+          <span>0.8</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Hand Metrics -->
+    <div class="flex flex-col gap-2 bg-black/30 p-2.5 rounded-lg border border-rose-500/20">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+        <span class="text-rose-300 font-bold uppercase tracking-wider text-[10px]">Right Hand Diagnostics</span>
+      </div>
+
+      <!-- Palm Triangle Metric -->
+      <div class="flex flex-col gap-0.5">
+        <div class="flex justify-between text-[10px] text-slate-400">
+          <span>Palm △ <span class="text-rose-300 font-bold">Ratio: <span id="debug-right-palm-ratio">0.000</span></span></span>
+          <span>Abs: <span id="debug-right-palm-area" class="text-slate-200">0.000</span></span>
+        </div>
+        <!-- Slider Track for Triangle (Interactive) -->
+        <div class="slider-track-triangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="triangle">
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+            <div id="debug-right-palm-bar" class="meter-bar h-full bg-rose-400 w-0"></div>
+          </div>
+          <div class="threshold-marker-triangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Palm Triangle threshold">
+            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+          </div>
+        </div>
+        <div class="flex justify-between text-[9px] text-slate-500">
+          <span>0.0</span>
+          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-triangle-thresh">0.26</span></span>
+          <span>0.8</span>
+        </div>
+      </div>
+
+      <!-- Fingers Rectangle Metric -->
+      <div class="flex flex-col gap-0.5 mt-0.5">
+        <div class="flex justify-between text-[10px] text-slate-400">
+          <span>Fingers ▭ <span class="text-emerald-300 font-bold">Ratio: <span id="debug-right-rect-ratio">0.000</span></span></span>
+          <span>Abs: <span id="debug-right-rect-area" class="text-slate-200">0.000</span></span>
+        </div>
+        <!-- Slider Track for Rectangle (Interactive) -->
+        <div class="slider-track-rectangle relative w-full h-4 flex items-center cursor-pointer select-none" data-metric="rectangle">
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative">
+            <div id="debug-right-rect-bar" class="meter-bar h-full bg-emerald-400 w-0"></div>
+          </div>
+          <div class="threshold-marker-rectangle absolute top-0 bottom-0 w-2.5 -ml-1.25 flex items-center justify-center threshold-handle z-20" title="Drag to adjust Fingers Rectangle threshold">
+            <div class="w-1 h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+          </div>
+        </div>
+        <div class="flex justify-between text-[9px] text-slate-500">
+          <span>0.0</span>
+          <span class="text-amber-400 font-bold">Thresh: <span class="lbl-rectangle-thresh">0.34</span></span>
+          <span>0.8</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
