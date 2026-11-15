@@ -1,0 +1,151 @@
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #06090e;
+  color: #f1f5f9;
+  overflow: hidden;
+  touch-action: none;
+}
+.font-brand {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.18em;
+}
+.font-mono-note {
+  font-family: 'JetBrains Mono', monospace;
+}
+.mirrored {
+  transform: scaleX(-1);
+}
+.glass-card {
+  background: rgba(10, 15, 26, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.7);
+}
+.title-shadow {
+  text-shadow: 
+    0 2px 4px rgba(0,0,0,0.95), 
+    0 4px 14px rgba(0,0,0,0.9), 
+    0 0 24px rgba(0,0,0,0.95),
+    0 0 40px rgba(0,0,0,0.85);
+}
+.note-text-left {
+  color: rgba(56, 189, 248, 0.88);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.45);
+}
+.note-text-right {
+  color: rgba(244, 63, 94, 0.88);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(244, 63, 94, 0.45);
+}
+.suspension-dots {
+  letter-spacing: 0.35em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+}
+.flag-btn {
+  transition: all 0.2s ease-in-out;
+}
+.meter-bar {
+  transition: width 0.08s ease-out;
+}
+.loading-fade {
+  transition: opacity 0.35s ease-in-out, transform 0.35s ease-in-out;
+}
+.loading-cycle-sign {
+  opacity: 0;
+  pointer-events-none;
+  animation: signCycle 8.4s infinite ease-in-out;
+  will-change: opacity, transform;
+}
+@keyframes signCycle {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  2.5% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  14% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  16.5% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+.loading-pulse-slow {
+  animation: pulseSlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.threshold-handle {
+  cursor: ew-resize;
+  touch-action: none;
+}
+.dial-sector {
+  cursor: pointer;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+.dial-sector:hover {
+  fill: rgba(56, 189, 248, 0.25) !important;
+}
+.dial-sector.active-root {
+  fill: rgba(56, 189, 248, 0.45) !important;
+  stroke: #38bdf8 !important;
+  stroke-width: 2px !important;
+}
+input[orient="vertical"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+}
+
+/* Piano Keyboard Track Styling (Compact Upper Half) */
+.piano-track {
+  background-color: #f8fafc;
+  /* Top-half compact cut: black keys fill 100% of track height in standard 2 + 3 groupings */
+  background-image: 
+    linear-gradient(
+      to right,
+      transparent 0%,
+      transparent 8.5%,
+      #111827 8.5%, #111827 15%, /* C# */
+      transparent 15%,
+      transparent 22.5%,
+      #111827 22.5%, #111827 29%, /* D# */
+      transparent 29%,
+      transparent 51%,
+      #111827 51%, #111827 57.5%, /* F# */
+      transparent 57.5%,
+      transparent 65.5%,
+      #111827 65.5%, #111827 72%, /* G# */
+      transparent 72%,
+      transparent 79.5%,
+      #111827 79.5%, #111827 86%, /* A# */
+      transparent 86%,
+      transparent 100%
+    ),
+    /* White key separators */
+    repeating-linear-gradient(
+      to right,
+      #f8fafc 0,
+      #f8fafc calc(100% / 7 - 1px),
+      #94a3b8 calc(100% / 7 - 1px),
+      #94a3b8 calc(100% / 7)
+    );
+  background-size: 70px 100%, 70px 100%;
+  background-repeat: repeat-x;
+  background-position: top left;
+}
+
