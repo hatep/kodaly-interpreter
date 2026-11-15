@@ -480,6 +480,16 @@ if (btnToggleHistory) {
   });
 }
 
+function positionMobilePopover(pillBtn, popoverEl) {
+  if (window.innerWidth < 640 && pillBtn && popoverEl) {
+    const rect = pillBtn.getBoundingClientRect();
+    // Position comfortably right below whichever row the pill wrapped onto
+    popoverEl.style.top = `${rect.bottom + 8}px`;
+  } else if (popoverEl) {
+    popoverEl.style.top = '';
+  }
+}
+
 btnRangePill.addEventListener('click', (e) => {
   e.stopPropagation();
   popoverRange.classList.toggle('hidden');
@@ -490,10 +500,12 @@ btnRangePill.addEventListener('click', (e) => {
 
 btnRootPill.addEventListener('click', (e) => {
   e.stopPropagation();
+  const willShow = popoverRoot.classList.contains('hidden');
   popoverRoot.classList.toggle('hidden');
   popoverRange.classList.add('hidden');
   if (popoverSound) popoverSound.classList.add('hidden');
   if (popoverTutorial) popoverTutorial.classList.add('hidden');
+  if (willShow) positionMobilePopover(btnRootPill, popoverRoot);
 });
 
 if (btnSoundPill && popoverSound) {
@@ -509,10 +521,12 @@ if (btnSoundPill && popoverSound) {
 if (btnTutorialPill && popoverTutorial) {
   btnTutorialPill.addEventListener('click', (e) => {
     e.stopPropagation();
+    const willShow = popoverTutorial.classList.contains('hidden');
     popoverTutorial.classList.toggle('hidden');
     popoverRange.classList.add('hidden');
     popoverRoot.classList.add('hidden');
     if (popoverSound) popoverSound.classList.add('hidden');
+    if (willShow) positionMobilePopover(btnTutorialPill, popoverTutorial);
   });
 }
 
